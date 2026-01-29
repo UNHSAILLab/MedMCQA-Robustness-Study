@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "WebFetch(domain:pubmedqa.github.io)",
+      "Bash(pip install:*)",
+      "Bash(python main.py:*)",
+      "Bash(python:*)"
+    ]
+  }
+}

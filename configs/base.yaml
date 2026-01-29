@@ -1,0 +1,39 @@
+seed: 42
+
+paths:
+  cache_dir: ./outputs/cache
+  results_dir: ./outputs/results
+  figures_dir: ./outputs/figures
+  checkpoints_dir: ./outputs/checkpoints
+  hf_cache_dir: ~/.cache/huggingface
+
+logging:
+  level: INFO
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  save_to_file: true
+
+inference:
+  batch_size: 4
+  checkpoint_interval: 100
+  use_cache: true
+
+models:
+  medgemma_4b:
+    model_id: google/medgemma-4b-it
+    quantization: null
+    max_new_tokens: 256
+
+  medgemma_27b:
+    model_id: google/medgemma-27b-text-it
+    quantization: 4bit
+    max_new_tokens: 256
+
+datasets:
+  medmcqa:
+    hf_id: openlifescienceai/medmcqa
+    split: validation  # Use validation (has answers); test split has no answers
+
+  pubmedqa:
+    hf_id: qiaojin/PubMedQA
+    subset: pqa_labeled
+    split: train  # PubMedQA labeled only has train split

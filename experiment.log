@@ -1,0 +1,50 @@
+2026-01-28 21:40:08,158 - scripts.run_experiment - INFO - Running experiment: prompt_ablation
+2026-01-28 21:40:08,158 - scripts.run_experiment - INFO - Model: 4b
+2026-01-28 21:40:08,158 - src.models.medgemma - INFO - Loading google/medgemma-4b-it with quantization=None
+2026-01-28 21:40:09,937 - __main__ - ERROR - Experiment prompt_ablation failed
+Traceback (most recent call last):
+  File "/home/bsada1/coderepo/MedMCQA-Robustness-Study/main.py", line 211, in main
+    run_experiment(
+  File "/home/bsada1/coderepo/MedMCQA-Robustness-Study/scripts/run_experiment.py", line 83, in run_experiment
+    model.load()
+  File "/home/bsada1/coderepo/MedMCQA-Robustness-Study/scripts/../src/models/medgemma.py", line 96, in load
+    self.model = AutoModelForCausalLM.from_pretrained(
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/NAS/bsada1/miniconda3/lib/python3.12/site-packages/transformers/models/auto/auto_factory.py", line 604, in from_pretrained
+    return model_class.from_pretrained(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/NAS/bsada1/miniconda3/lib/python3.12/site-packages/transformers/modeling_utils.py", line 277, in _wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/NAS/bsada1/miniconda3/lib/python3.12/site-packages/transformers/modeling_utils.py", line 4971, in from_pretrained
+    model = cls(config, *model_args, **model_kwargs)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/NAS/bsada1/miniconda3/lib/python3.12/site-packages/transformers/models/gemma3/modeling_gemma3.py", line 997, in __init__
+    super().__init__(config)
+  File "/NAS/bsada1/miniconda3/lib/python3.12/site-packages/transformers/modeling_utils.py", line 2076, in __init__
+    self.config._attn_implementation_internal = self._check_and_adjust_attn_implementation(
+                                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/NAS/bsada1/miniconda3/lib/python3.12/site-packages/transformers/modeling_utils.py", line 2686, in _check_and_adjust_attn_implementation
+    applicable_attn_implementation = self.get_correct_attn_implementation(
+                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/NAS/bsada1/miniconda3/lib/python3.12/site-packages/transformers/modeling_utils.py", line 2714, in get_correct_attn_implementation
+    self._flash_attn_2_can_dispatch(is_init_check)
+  File "/NAS/bsada1/miniconda3/lib/python3.12/site-packages/transformers/modeling_utils.py", line 2422, in _flash_attn_2_can_dispatch
+    raise ImportError(f"{preface} the package flash_attn seems to be not installed. {install_message}")
+ImportError: FlashAttention2 has been toggled on, but it cannot be used due to the following error: the package flash_attn seems to be not installed. Please refer to the documentation of https://huggingface.co/docs/transformers/perf_infer_gpu_one#flashattention-2 to install Flash Attention 2.
+2026-01-28 21:40:30,638 - scripts.run_experiment - INFO - Running experiment: prompt_ablation
+2026-01-28 21:40:30,638 - scripts.run_experiment - INFO - Model: 4b
+2026-01-28 21:40:30,638 - src.models.medgemma - INFO - Loading google/medgemma-4b-it with quantization=None
+2026-01-28 21:40:32,198 - src.models.medgemma - INFO - Flash attention not available, using default attention
+2026-01-28 21:40:35,690 - src.models.medgemma - INFO - Model loaded successfully on cuda:0
+2026-01-28 21:40:35,701 - src.experiments.base - INFO - Starting experiment: exp1_prompt_ablation
+2026-01-28 21:40:35,701 - src.experiments.base - INFO - Model: medgemma_4b
+2026-01-28 21:40:36,569 - src.experiments.exp1_prompt_ablation - INFO - Loaded 50 MedMCQA items
+2026-01-28 21:40:36,569 - src.experiments.exp1_prompt_ablation - INFO - Running condition: zero_shot_direct
+2026-01-28 21:40:36,578 - src.experiments.base - INFO - Processing 50 items (cache hits: 0)
+2026-01-28 21:49:43,347 - src.experiments.exp1_prompt_ablation - INFO - Running condition: zero_shot_cot
+2026-01-28 21:49:43,353 - src.experiments.base - INFO - Processing 50 items (cache hits: 0)
+2026-01-28 21:58:51,905 - src.experiments.exp1_prompt_ablation - INFO - Running condition: few_shot_3_direct
+2026-01-28 21:58:51,913 - src.experiments.base - INFO - Processing 50 items (cache hits: 0)
+2026-01-28 22:08:20,457 - src.experiments.exp1_prompt_ablation - INFO - Running condition: few_shot_3_cot
+2026-01-28 22:08:20,465 - src.experiments.base - INFO - Processing 50 items (cache hits: 0)
