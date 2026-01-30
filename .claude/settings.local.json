@@ -5,7 +5,26 @@
       "WebFetch(domain:pubmedqa.github.io)",
       "Bash(pip install:*)",
       "Bash(python main.py:*)",
-      "Bash(python:*)"
+      "Bash(python:*)",
+      "Bash(bash:*)",
+      "Bash(nvidia-smi:*)",
+      "Bash(cat:*)",
+      "Bash(find:*)",
+      "Bash(pkill:*)",
+      "Bash(ls:*)",
+      "Bash(ps:*)",
+      "Bash(kill:*)",
+      "Bash(tree:*)",
+      "Bash(wc:*)",
+      "Bash(python3:*)",
+      "Bash(pdflatex:*)",
+      "Bash(CUDA_VISIBLE_DEVICES=1 python:*)",
+      "Bash(CUDA_VISIBLE_DEVICES=2 python scripts/run_experiment.py:*)",
+      "Bash(for i in 1 2 3)",
+      "Bash(do)",
+      "Bash(done)",
+      "Bash(lsof:*)",
+      "Bash(sort:*)"
     ]
   }
 }

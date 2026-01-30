@@ -48,3 +48,983 @@ ImportError: FlashAttention2 has been toggled on, but it cannot be used due to t
 2026-01-28 21:58:51,913 - src.experiments.base - INFO - Processing 50 items (cache hits: 0)
 2026-01-28 22:08:20,457 - src.experiments.exp1_prompt_ablation - INFO - Running condition: few_shot_3_cot
 2026-01-28 22:08:20,465 - src.experiments.base - INFO - Processing 50 items (cache hits: 0)
+2026-01-28 22:36:23,184 - scripts.run_experiment - INFO - Running experiment: self_consistency
+2026-01-28 22:36:23,184 - scripts.run_experiment - INFO - Model: 4b
+2026-01-28 22:36:23,184 - src.models.medgemma - INFO - Loading google/medgemma-4b-it with quantization=None
+2026-01-28 22:36:23,309 - scripts.run_experiment - INFO - Running experiment: prompt_ablation
+2026-01-28 22:36:23,309 - scripts.run_experiment - INFO - Model: 27b
+2026-01-28 22:36:23,309 - src.models.medgemma - INFO - Loading google/medgemma-27b-text-it with quantization=4bit
+2026-01-28 22:36:23,315 - scripts.run_experiment - INFO - Running experiment: prompt_ablation
+2026-01-28 22:36:23,316 - scripts.run_experiment - INFO - Model: 4b
+2026-01-28 22:36:23,316 - src.models.medgemma - INFO - Loading google/medgemma-4b-it with quantization=None
+2026-01-28 22:36:23,357 - scripts.run_experiment - INFO - Running experiment: evidence_conditioning
+2026-01-28 22:36:23,357 - scripts.run_experiment - INFO - Model: 27b
+2026-01-28 22:36:23,357 - src.models.medgemma - INFO - Loading google/medgemma-27b-text-it with quantization=4bit
+2026-01-28 22:36:23,473 - scripts.run_experiment - INFO - Running experiment: option_order
+2026-01-28 22:36:23,473 - scripts.run_experiment - INFO - Model: 27b
+2026-01-28 22:36:23,473 - src.models.medgemma - INFO - Loading google/medgemma-27b-text-it with quantization=4bit
+2026-01-28 22:36:23,474 - scripts.run_experiment - INFO - Running experiment: evidence_conditioning
+2026-01-28 22:36:23,474 - scripts.run_experiment - INFO - Model: 4b
+2026-01-28 22:36:23,474 - src.models.medgemma - INFO - Loading google/medgemma-4b-it with quantization=None
+2026-01-28 22:36:23,494 - scripts.run_experiment - INFO - Running experiment: option_order
+2026-01-28 22:36:23,495 - scripts.run_experiment - INFO - Model: 4b
+2026-01-28 22:36:23,495 - src.models.medgemma - INFO - Loading google/medgemma-4b-it with quantization=None
+2026-01-28 22:36:23,561 - scripts.run_experiment - INFO - Running experiment: self_consistency
+2026-01-28 22:36:23,561 - scripts.run_experiment - INFO - Model: 27b
+2026-01-28 22:36:23,561 - src.models.medgemma - INFO - Loading google/medgemma-27b-text-it with quantization=4bit
+2026-01-28 22:36:24,367 - src.models.medgemma - INFO - Flash attention not available, using default attention
+2026-01-28 22:36:24,536 - src.models.medgemma - INFO - Flash attention not available, using default attention
+2026-01-28 22:36:24,613 - src.models.medgemma - INFO - Flash attention not available, using default attention
+2026-01-28 22:36:24,691 - src.models.medgemma - INFO - Flash attention not available, using default attention
+2026-01-28 22:36:26,786 - src.models.medgemma - INFO - Flash attention not available, using default attention
+2026-01-28 22:36:26,825 - src.models.medgemma - INFO - Flash attention not available, using default attention
+2026-01-28 22:36:26,825 - src.models.medgemma - INFO - Flash attention not available, using default attention
+2026-01-28 22:36:26,838 - src.models.medgemma - INFO - Flash attention not available, using default attention
+2026-01-28 22:40:01,992 - __main__ - ERROR - Experiment prompt_ablation failed
+Traceback (most recent call last):
+  File "/home/bsada1/coderepo/MedMCQA-Robustness-Study/main.py", line 211, in main
+    run_experiment(
+    ~~~~~~~~~~~~~~^
+        experiment_name=exp_name,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+        output_dir=args.output_dir
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/bsada1/coderepo/MedMCQA-Robustness-Study/scripts/run_experiment.py", line 83, in run_experiment
+    model.load()
+    ~~~~~~~~~~^^
+  File "/home/bsada1/coderepo/MedMCQA-Robustness-Study/scripts/../src/models/medgemma.py", line 99, in load
+    self.model = AutoModelForCausalLM.from_pretrained(
+                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        self.model_id,
+        ^^^^^^^^^^^^^^
+        **model_kwargs
+        ^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/bsada1/miniconda3/lib/python3.13/site-packages/transformers/models/auto/auto_factory.py", line 604, in from_pretrained
+    return model_class.from_pretrained(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        pretrained_model_name_or_path, *model_args, config=config, **hub_kwargs, **kwargs
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/bsada1/miniconda3/lib/python3.13/site-packages/transformers/modeling_utils.py", line 277, in _wrapper
+    return func(*args, **kwargs)
+  File "/home/bsada1/miniconda3/lib/python3.13/site-packages/transformers/modeling_utils.py", line 5048, in from_pretrained
+    ) = cls._load_pretrained_model(
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        model,
+        ^^^^^^
+    ...<12 lines>...
+        weights_only=weights_only,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/bsada1/miniconda3/lib/python3.13/site-packages/transformers/modeling_utils.py", line 5468, in _load_pretrained_model
+    _error_msgs, disk_offload_index = load_shard_file(args)
+                                      ~~~~~~~~~~~~~~~^^^^^^
+  File "/home/bsada1/miniconda3/lib/python3.13/site-packages/transformers/modeling_utils.py", line 843, in load_shard_file
+    disk_offload_index = _load_state_dict_into_meta_model(
+        model,
+    ...<8 lines>...
+        device_mesh=device_mesh,
+    )
+  File "/home/bsada1/miniconda3/lib/python3.13/site-packages/torch/utils/_contextlib.py", line 124, in decorate_context
+    return func(*args, **kwargs)
+  File "/home/bsada1/miniconda3/lib/python3.13/site-packages/transformers/modeling_utils.py", line 748, in _load_state_dict_into_meta_model
+    param = param[...]
+            ~~~~~^^^^^
+torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 20.00 MiB. GPU 0 has a total capacity of 79.25 GiB of which 16.50 MiB is free. Process 2557440 has 652.00 MiB memory in use. Process 347385 has 65.42 GiB memory in use. Process 432385 has 9.43 GiB memory in use. Including non-PyTorch memory, this process has 3.71 GiB memory in use. Of the allocated memory 3.31 GiB is allocated by PyTorch, and 1.77 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)
+2026-01-28 22:40:02,914 - src.models.medgemma - INFO - Model loaded successfully on cuda:0
+2026-01-28 22:40:02,916 - src.experiments.base - INFO - Starting experiment: exp2_option_order
+2026-01-28 22:40:02,916 - src.experiments.base - INFO - Model: medgemma_4b
+2026-01-28 22:40:02,984 - src.models.medgemma - INFO - Model loaded successfully on cuda:0
+2026-01-28 22:40:02,985 - src.experiments.base - INFO - Starting experiment: exp3_evidence_conditioning
+2026-01-28 22:40:02,985 - src.experiments.base - INFO - Model: medgemma_4b
+2026-01-28 22:40:03,619 - src.experiments.exp2_option_order - INFO - Loaded 50 MedMCQA items
+2026-01-28 22:40:03,619 - src.experiments.exp2_option_order - INFO - Running original order...
+2026-01-28 22:40:03,633 - src.experiments.exp2_option_order - INFO - Running perturbation: random_shuffle
+2026-01-28 22:40:03,642 - src.experiments.base - INFO - Processing 47 items (cache hits: 3)
+2026-01-28 22:40:03,777 - src.experiments.exp3_evidence_conditioning - INFO - Loaded 50 PubMedQA items
+2026-01-28 22:40:03,777 - src.experiments.exp3_evidence_conditioning - INFO - Running condition: question_only
+2026-01-28 22:40:03,787 - src.experiments.base - INFO - Processing 50 items (cache hits: 0)
+2026-01-28 22:40:04,069 - src.models.medgemma - INFO - Model loaded successfully on cuda:0
+2026-01-28 22:40:04,070 - src.experiments.base - INFO - Starting experiment: exp4_self_consistency
+2026-01-28 22:40:04,070 - src.experiments.base - INFO - Model: medgemma_4b
+2026-01-28 22:40:04,070 - src.experiments.exp4_self_consistency - INFO - Running self-consistency on MedMCQA...
+2026-01-28 22:40:05,639 - src.experiments.exp4_self_consistency - INFO - MedMCQA with N=1 samples
+2026-01-28 22:42:49,065 - src.experiments.exp2_option_order - INFO - Running perturbation: rotate_1
+2026-01-28 22:42:49,074 - src.experiments.base - INFO - Processing 49 items (cache hits: 1)
+2026-01-28 22:42:52,372 - src.experiments.exp3_evidence_conditioning - INFO - Running condition: full_context
+2026-01-28 22:42:52,380 - src.experiments.base - INFO - Processing 50 items (cache hits: 0)
+2026-01-28 22:45:38,115 - src.experiments.exp2_option_order - INFO - Running perturbation: rotate_2
+2026-01-28 22:45:38,124 - src.experiments.base - INFO - Processing 48 items (cache hits: 2)
+2026-01-28 22:45:40,111 - src.experiments.exp3_evidence_conditioning - INFO - Running condition: truncated_50
+2026-01-28 22:45:40,120 - src.experiments.base - INFO - Processing 50 items (cache hits: 0)
+2026-01-28 22:47:24,581 - __main__ - ERROR - Experiment prompt_ablation failed
+Traceback (most recent call last):
+  File "/home/bsada1/coderepo/MedMCQA-Robustness-Study/main.py", line 211, in main
+    run_experiment(
+    ~~~~~~~~~~~~~~^
+        experiment_name=exp_name,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+        output_dir=args.output_dir
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/bsada1/coderepo/MedMCQA-Robustness-Study/scripts/run_experiment.py", line 83, in run_experiment
+    model.load()
+    ~~~~~~~~~~^^
+  File "/home/bsada1/coderepo/MedMCQA-Robustness-Study/scripts/../src/models/medgemma.py", line 99, in load
+    self.model = AutoModelForCausalLM.from_pretrained(
+                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        self.model_id,
+        ^^^^^^^^^^^^^^
+        **model_kwargs
+        ^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/bsada1/miniconda3/lib/python3.13/site-packages/transformers/models/auto/auto_factory.py", line 604, in from_pretrained
+    return model_class.from_pretrained(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        pretrained_model_name_or_path, *model_args, config=config, **hub_kwargs, **kwargs
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/bsada1/miniconda3/lib/python3.13/site-packages/transformers/modeling_utils.py", line 277, in _wrapper
+    return func(*args, **kwargs)
+  File "/home/bsada1/miniconda3/lib/python3.13/site-packages/transformers/modeling_utils.py", line 5029, in from_pretrained
+    device_map = _get_device_map(model, device_map, max_memory, hf_quantizer, dtype, keep_in_fp32_regex)
+  File "/home/bsada1/miniconda3/lib/python3.13/site-packages/transformers/modeling_utils.py", line 1365, in _get_device_map
+    hf_quantizer.validate_environment(device_map=device_map)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/bsada1/miniconda3/lib/python3.13/site-packages/transformers/quantizers/quantizer_bnb_4bit.py", line 127, in validate_environment
+    raise ValueError(
+    ...<6 lines>...
+    )
+ValueError: Some modules are dispatched on the CPU or the disk. Make sure you have enough GPU RAM to fit the quantized model. If you want to dispatch the model on the CPU or the disk while keeping these modules in 32-bit, you need to set `llm_int8_enable_fp32_cpu_offload=True` and pass a custom `device_map` to `from_pretrained`. Check https://huggingface.co/docs/transformers/main/en/main_classes/quantization#offload-between-cpu-and-gpu for more details. 
+2026-01-28 22:47:24,599 - __main__ - ERROR - Experiment self_consistency failed
+Traceback (most recent call last):
+  File "/home/bsada1/coderepo/MedMCQA-Robustness-Study/main.py", line 211, in main
+    run_experiment(
+    ~~~~~~~~~~~~~~^
+        experiment_name=exp_name,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+        output_dir=args.output_dir
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/bsada1/coderepo/MedMCQA-Robustness-Study/scripts/run_experiment.py", line 83, in run_experiment
+    model.load()
+    ~~~~~~~~~~^^
+  File "/home/bsada1/coderepo/MedMCQA-Robustness-Study/scripts/../src/models/medgemma.py", line 99, in load
+    self.model = AutoModelForCausalLM.from_pretrained(
+                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        self.model_id,
+        ^^^^^^^^^^^^^^
+        **model_kwargs
+        ^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/bsada1/miniconda3/lib/python3.13/site-packages/transformers/models/auto/auto_factory.py", line 604, in from_pretrained
+    return model_class.from_pretrained(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        pretrained_model_name_or_path, *model_args, config=config, **hub_kwargs, **kwargs
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/bsada1/miniconda3/lib/python3.13/site-packages/transformers/modeling_utils.py", line 277, in _wrapper
+    return func(*args, **kwargs)
+  File "/home/bsada1/miniconda3/lib/python3.13/site-packages/transformers/modeling_utils.py", line 5029, in from_pretrained
+    device_map = _get_device_map(model, device_map, max_memory, hf_quantizer, dtype, keep_in_fp32_regex)
+  File "/home/bsada1/miniconda3/lib/python3.13/site-packages/transformers/modeling_utils.py", line 1365, in _get_device_map
+    hf_quantizer.validate_environment(device_map=device_map)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/bsada1/miniconda3/lib/python3.13/site-packages/transformers/quantizers/quantizer_bnb_4bit.py", line 127, in validate_environment
+    raise ValueError(
+    ...<6 lines>...
+    )
+ValueError: Some modules are dispatched on the CPU or the disk. Make sure you have enough GPU RAM to fit the quantized model. If you want to dispatch the model on the CPU or the disk while keeping these modules in 32-bit, you need to set `llm_int8_enable_fp32_cpu_offload=True` and pass a custom `device_map` to `from_pretrained`. Check https://huggingface.co/docs/transformers/main/en/main_classes/quantization#offload-between-cpu-and-gpu for more details. 
+2026-01-28 22:47:24,625 - __main__ - ERROR - Experiment evidence_conditioning failed
+Traceback (most recent call last):
+  File "/home/bsada1/coderepo/MedMCQA-Robustness-Study/main.py", line 211, in main
+    run_experiment(
+    ~~~~~~~~~~~~~~^
+        experiment_name=exp_name,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+        output_dir=args.output_dir
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/bsada1/coderepo/MedMCQA-Robustness-Study/scripts/run_experiment.py", line 83, in run_experiment
+    model.load()
+    ~~~~~~~~~~^^
+  File "/home/bsada1/coderepo/MedMCQA-Robustness-Study/scripts/../src/models/medgemma.py", line 99, in load
+    self.model = AutoModelForCausalLM.from_pretrained(
+                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        self.model_id,
+        ^^^^^^^^^^^^^^
+        **model_kwargs
+        ^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/bsada1/miniconda3/lib/python3.13/site-packages/transformers/models/auto/auto_factory.py", line 604, in from_pretrained
+    return model_class.from_pretrained(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        pretrained_model_name_or_path, *model_args, config=config, **hub_kwargs, **kwargs
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/bsada1/miniconda3/lib/python3.13/site-packages/transformers/modeling_utils.py", line 277, in _wrapper
+    return func(*args, **kwargs)
+  File "/home/bsada1/miniconda3/lib/python3.13/site-packages/transformers/modeling_utils.py", line 5029, in from_pretrained
+    device_map = _get_device_map(model, device_map, max_memory, hf_quantizer, dtype, keep_in_fp32_regex)
+  File "/home/bsada1/miniconda3/lib/python3.13/site-packages/transformers/modeling_utils.py", line 1365, in _get_device_map
+    hf_quantizer.validate_environment(device_map=device_map)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/bsada1/miniconda3/lib/python3.13/site-packages/transformers/quantizers/quantizer_bnb_4bit.py", line 127, in validate_environment
+    raise ValueError(
+    ...<6 lines>...
+    )
+ValueError: Some modules are dispatched on the CPU or the disk. Make sure you have enough GPU RAM to fit the quantized model. If you want to dispatch the model on the CPU or the disk while keeping these modules in 32-bit, you need to set `llm_int8_enable_fp32_cpu_offload=True` and pass a custom `device_map` to `from_pretrained`. Check https://huggingface.co/docs/transformers/main/en/main_classes/quantization#offload-between-cpu-and-gpu for more details. 
+2026-01-28 22:47:24,642 - __main__ - ERROR - Experiment option_order failed
+Traceback (most recent call last):
+  File "/home/bsada1/coderepo/MedMCQA-Robustness-Study/main.py", line 211, in main
+    run_experiment(
+    ~~~~~~~~~~~~~~^
+        experiment_name=exp_name,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+        output_dir=args.output_dir
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/bsada1/coderepo/MedMCQA-Robustness-Study/scripts/run_experiment.py", line 83, in run_experiment
+    model.load()
+    ~~~~~~~~~~^^
+  File "/home/bsada1/coderepo/MedMCQA-Robustness-Study/scripts/../src/models/medgemma.py", line 99, in load
+    self.model = AutoModelForCausalLM.from_pretrained(
+                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        self.model_id,
+        ^^^^^^^^^^^^^^
+        **model_kwargs
+        ^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/bsada1/miniconda3/lib/python3.13/site-packages/transformers/models/auto/auto_factory.py", line 604, in from_pretrained
+    return model_class.from_pretrained(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        pretrained_model_name_or_path, *model_args, config=config, **hub_kwargs, **kwargs
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/bsada1/miniconda3/lib/python3.13/site-packages/transformers/modeling_utils.py", line 277, in _wrapper
+    return func(*args, **kwargs)
+  File "/home/bsada1/miniconda3/lib/python3.13/site-packages/transformers/modeling_utils.py", line 5029, in from_pretrained
+    device_map = _get_device_map(model, device_map, max_memory, hf_quantizer, dtype, keep_in_fp32_regex)
+  File "/home/bsada1/miniconda3/lib/python3.13/site-packages/transformers/modeling_utils.py", line 1365, in _get_device_map
+    hf_quantizer.validate_environment(device_map=device_map)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/bsada1/miniconda3/lib/python3.13/site-packages/transformers/quantizers/quantizer_bnb_4bit.py", line 127, in validate_environment
+    raise ValueError(
+    ...<6 lines>...
+    )
+ValueError: Some modules are dispatched on the CPU or the disk. Make sure you have enough GPU RAM to fit the quantized model. If you want to dispatch the model on the CPU or the disk while keeping these modules in 32-bit, you need to set `llm_int8_enable_fp32_cpu_offload=True` and pass a custom `device_map` to `from_pretrained`. Check https://huggingface.co/docs/transformers/main/en/main_classes/quantization#offload-between-cpu-and-gpu for more details. 
+2026-01-28 22:48:19,748 - src.experiments.exp2_option_order - INFO - Running perturbation: distractor_swap
+2026-01-28 22:48:19,758 - src.experiments.base - INFO - Processing 50 items (cache hits: 0)
+2026-01-28 22:48:26,970 - src.experiments.exp3_evidence_conditioning - INFO - Running condition: truncated_25
+2026-01-28 22:48:26,979 - src.experiments.base - INFO - Processing 50 items (cache hits: 0)
+2026-01-28 22:51:04,534 - src.experiments.base - INFO - Results saved to outputs/results/exp2_option_order_medgemma_4b_20260128_224002.json
+2026-01-28 22:51:04,535 - src.utils.checkpointing - INFO - Checkpoint cleared: ./outputs/checkpoints/exp2_option_order_medgemma_4b_checkpoint.json
+2026-01-28 22:51:04,535 - scripts.run_experiment - INFO - Experiment completed. Results saved to: outputs/results/exp2_option_order_medgemma_4b_20260128_224002.json
+2026-01-28 22:51:13,625 - src.experiments.exp3_evidence_conditioning - INFO - Running condition: background_only
+2026-01-28 22:51:13,634 - src.experiments.base - INFO - Processing 50 items (cache hits: 0)
+2026-01-28 22:54:01,820 - src.experiments.exp3_evidence_conditioning - INFO - Running condition: results_only
+2026-01-28 22:54:01,829 - src.experiments.base - INFO - Processing 50 items (cache hits: 0)
+2026-01-28 22:56:49,544 - src.experiments.base - INFO - Results saved to outputs/results/exp3_evidence_conditioning_medgemma_4b_20260128_224002.json
+2026-01-28 22:56:49,545 - src.utils.checkpointing - INFO - Checkpoint cleared: ./outputs/checkpoints/exp3_evidence_conditioning_medgemma_4b_checkpoint.json
+2026-01-28 22:56:49,545 - scripts.run_experiment - INFO - Experiment completed. Results saved to: outputs/results/exp3_evidence_conditioning_medgemma_4b_20260128_224002.json
+2026-01-28 23:01:41,609 - src.experiments.exp4_self_consistency - INFO - MedMCQA with N=3 samples
+2026-01-28 23:16:02,250 - __main__ - ERROR - Experiment self_consistency failed
+Traceback (most recent call last):
+  File "/home/bsada1/miniconda3/lib/python3.13/site-packages/tqdm/std.py", line 1191, in __iter__
+    self.update(n - last_print_n)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "/home/bsada1/miniconda3/lib/python3.13/site-packages/tqdm/std.py", line 1242, in update
+    self.refresh(lock_args=self.lock_args)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/bsada1/miniconda3/lib/python3.13/site-packages/tqdm/std.py", line 1347, in refresh
+    self.display()
+    ~~~~~~~~~~~~^^
+  File "/home/bsada1/miniconda3/lib/python3.13/site-packages/tqdm/std.py", line 1495, in display
+    self.sp(self.__str__() if msg is None else msg)
+    ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/bsada1/miniconda3/lib/python3.13/site-packages/tqdm/std.py", line 459, in print_status
+    fp_write('\r' + s + (' ' * max(last_len[0] - len_s, 0)))
+    ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/bsada1/miniconda3/lib/python3.13/site-packages/tqdm/std.py", line 452, in fp_write
+    fp.write(str(s))
+    ~~~~~~~~^^^^^^^^
+  File "/home/bsada1/miniconda3/lib/python3.13/site-packages/tqdm/utils.py", line 196, in inner
+    return func(*args, **kwargs)
+BrokenPipeError: [Errno 32] Broken pipe
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/bsada1/coderepo/MedMCQA-Robustness-Study/main.py", line 211, in main
+    run_experiment(
+    ~~~~~~~~~~~~~~^
+        experiment_name=exp_name,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+        output_dir=args.output_dir
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/bsada1/coderepo/MedMCQA-Robustness-Study/scripts/run_experiment.py", line 101, in run_experiment
+    result = experiment.full_run()
+  File "/home/bsada1/coderepo/MedMCQA-Robustness-Study/scripts/../src/experiments/base.py", line 255, in full_run
+    results = self.run()
+  File "/home/bsada1/coderepo/MedMCQA-Robustness-Study/scripts/../src/experiments/exp4_self_consistency.py", line 66, in run
+    results['medmcqa'][f'n_{n_samples}'] = self._run_self_consistency(
+                                           ~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        data=medmcqa_data,
+        ^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+        temperature=temperature
+        ^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/bsada1/coderepo/MedMCQA-Robustness-Study/scripts/../src/experiments/exp4_self_consistency.py", line 127, in _run_self_consistency
+    for item in tqdm(data, desc=f"SC (N={n_samples})"):
+                ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/bsada1/miniconda3/lib/python3.13/site-packages/tqdm/std.py", line 1196, in __iter__
+    self.close()
+    ~~~~~~~~~~^^
+  File "/home/bsada1/miniconda3/lib/python3.13/site-packages/tqdm/std.py", line 1302, in close
+    self.display(pos=0)
+    ~~~~~~~~~~~~^^^^^^^
+  File "/home/bsada1/miniconda3/lib/python3.13/site-packages/tqdm/std.py", line 1495, in display
+    self.sp(self.__str__() if msg is None else msg)
+    ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/bsada1/miniconda3/lib/python3.13/site-packages/tqdm/std.py", line 459, in print_status
+    fp_write('\r' + s + (' ' * max(last_len[0] - len_s, 0)))
+    ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/bsada1/miniconda3/lib/python3.13/site-packages/tqdm/std.py", line 452, in fp_write
+    fp.write(str(s))
+    ~~~~~~~~^^^^^^^^
+  File "/home/bsada1/miniconda3/lib/python3.13/site-packages/tqdm/utils.py", line 196, in inner
+    return func(*args, **kwargs)
+BrokenPipeError: [Errno 32] Broken pipe
+2026-01-28 23:22:27,445 - scripts.run_experiment - INFO - Running experiment: evidence_conditioning
+2026-01-28 23:22:27,445 - scripts.run_experiment - INFO - Model: 4b
+2026-01-28 23:22:27,445 - src.models.medgemma - INFO - Loading google/medgemma-4b-it with quantization=None
+2026-01-28 23:22:27,800 - scripts.run_experiment - INFO - Running experiment: self_consistency
+2026-01-28 23:22:27,800 - scripts.run_experiment - INFO - Model: 4b
+2026-01-28 23:22:27,800 - src.models.medgemma - INFO - Loading google/medgemma-4b-it with quantization=None
+2026-01-28 23:22:27,837 - scripts.run_experiment - INFO - Running experiment: prompt_ablation
+2026-01-28 23:22:27,837 - scripts.run_experiment - INFO - Model: 4b
+2026-01-28 23:22:27,837 - src.models.medgemma - INFO - Loading google/medgemma-4b-it with quantization=None
+2026-01-28 23:22:27,890 - scripts.run_experiment - INFO - Running experiment: option_order
+2026-01-28 23:22:27,890 - scripts.run_experiment - INFO - Model: 4b
+2026-01-28 23:22:27,890 - src.models.medgemma - INFO - Loading google/medgemma-4b-it with quantization=None
+2026-01-28 23:22:27,912 - scripts.run_experiment - INFO - Running experiment: evidence_conditioning
+2026-01-28 23:22:27,912 - scripts.run_experiment - INFO - Model: 27b
+2026-01-28 23:22:27,912 - src.models.medgemma - INFO - Loading google/medgemma-27b-text-it with quantization=4bit
+2026-01-28 23:22:27,916 - scripts.run_experiment - INFO - Running experiment: option_order
+2026-01-28 23:22:27,917 - scripts.run_experiment - INFO - Model: 27b
+2026-01-28 23:22:27,917 - src.models.medgemma - INFO - Loading google/medgemma-27b-text-it with quantization=4bit
+2026-01-28 23:22:27,957 - scripts.run_experiment - INFO - Running experiment: prompt_ablation
+2026-01-28 23:22:27,957 - scripts.run_experiment - INFO - Model: 27b
+2026-01-28 23:22:27,957 - src.models.medgemma - INFO - Loading google/medgemma-27b-text-it with quantization=4bit
+2026-01-28 23:22:28,632 - src.models.medgemma - INFO - Flash attention not available, using default attention
+2026-01-28 23:22:29,006 - src.models.medgemma - INFO - Flash attention not available, using default attention
+2026-01-28 23:22:29,022 - src.models.medgemma - INFO - Flash attention not available, using default attention
+2026-01-28 23:22:29,126 - src.models.medgemma - INFO - Flash attention not available, using default attention
+2026-01-28 23:22:29,129 - src.models.medgemma - INFO - Flash attention not available, using default attention
+2026-01-28 23:22:29,182 - src.models.medgemma - INFO - Flash attention not available, using default attention
+2026-01-28 23:22:29,211 - src.models.medgemma - INFO - Flash attention not available, using default attention
+2026-01-28 23:26:16,096 - __main__ - ERROR - Experiment self_consistency failed
+Traceback (most recent call last):
+  File "/home/bsada1/coderepo/MedMCQA-Robustness-Study/main.py", line 211, in main
+    run_experiment(
+    ~~~~~~~~~~~~~~^
+        experiment_name=exp_name,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+        output_dir=args.output_dir
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/bsada1/coderepo/MedMCQA-Robustness-Study/scripts/run_experiment.py", line 83, in run_experiment
+    model.load()
+    ~~~~~~~~~~^^
+  File "/home/bsada1/coderepo/MedMCQA-Robustness-Study/scripts/../src/models/medgemma.py", line 99, in load
+    self.model = AutoModelForCausalLM.from_pretrained(
+                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        self.model_id,
+        ^^^^^^^^^^^^^^
+        **model_kwargs
+        ^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/bsada1/miniconda3/lib/python3.13/site-packages/transformers/models/auto/auto_factory.py", line 604, in from_pretrained
+    return model_class.from_pretrained(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        pretrained_model_name_or_path, *model_args, config=config, **hub_kwargs, **kwargs
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/bsada1/miniconda3/lib/python3.13/site-packages/transformers/modeling_utils.py", line 277, in _wrapper
+    return func(*args, **kwargs)
+  File "/home/bsada1/miniconda3/lib/python3.13/site-packages/transformers/modeling_utils.py", line 5048, in from_pretrained
+    ) = cls._load_pretrained_model(
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        model,
+        ^^^^^^
+    ...<12 lines>...
+        weights_only=weights_only,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/bsada1/miniconda3/lib/python3.13/site-packages/transformers/modeling_utils.py", line 5432, in _load_pretrained_model
+    caching_allocator_warmup(model, expanded_device_map, hf_quantizer)
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/bsada1/miniconda3/lib/python3.13/site-packages/transformers/modeling_utils.py", line 6090, in caching_allocator_warmup
+    device_memory = torch_accelerator_module.mem_get_info(index)[0]
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^
+  File "/home/bsada1/miniconda3/lib/python3.13/site-packages/torch/cuda/memory.py", line 897, in mem_get_info
+    return torch.cuda.cudart().cudaMemGetInfo(device)
+           ~~~~~~~~~~~~~~~~~^^
+  File "/home/bsada1/miniconda3/lib/python3.13/site-packages/torch/cuda/__init__.py", line 501, in cudart
+    _lazy_init()
+    ~~~~~~~~~~^^
+  File "/home/bsada1/miniconda3/lib/python3.13/site-packages/torch/cuda/__init__.py", line 424, in _lazy_init
+    torch._C._cuda_init()
+    ~~~~~~~~~~~~~~~~~~~^^
+RuntimeError: No CUDA GPUs are available
+2026-01-28 23:26:17,614 - __main__ - ERROR - Experiment evidence_conditioning failed
+Traceback (most recent call last):
+  File "/home/bsada1/coderepo/MedMCQA-Robustness-Study/main.py", line 211, in main
+    run_experiment(
+    ~~~~~~~~~~~~~~^
+        experiment_name=exp_name,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+        output_dir=args.output_dir
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/bsada1/coderepo/MedMCQA-Robustness-Study/scripts/run_experiment.py", line 83, in run_experiment
+    model.load()
+    ~~~~~~~~~~^^
+  File "/home/bsada1/coderepo/MedMCQA-Robustness-Study/scripts/../src/models/medgemma.py", line 99, in load
+    self.model = AutoModelForCausalLM.from_pretrained(
+                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        self.model_id,
+        ^^^^^^^^^^^^^^
+        **model_kwargs
+        ^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/bsada1/miniconda3/lib/python3.13/site-packages/transformers/models/auto/auto_factory.py", line 604, in from_pretrained
+    return model_class.from_pretrained(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        pretrained_model_name_or_path, *model_args, config=config, **hub_kwargs, **kwargs
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/bsada1/miniconda3/lib/python3.13/site-packages/transformers/modeling_utils.py", line 277, in _wrapper
+    return func(*args, **kwargs)
+  File "/home/bsada1/miniconda3/lib/python3.13/site-packages/transformers/modeling_utils.py", line 5029, in from_pretrained
+    device_map = _get_device_map(model, device_map, max_memory, hf_quantizer, dtype, keep_in_fp32_regex)
+  File "/home/bsada1/miniconda3/lib/python3.13/site-packages/transformers/modeling_utils.py", line 1365, in _get_device_map
+    hf_quantizer.validate_environment(device_map=device_map)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/bsada1/miniconda3/lib/python3.13/site-packages/transformers/quantizers/quantizer_bnb_4bit.py", line 127, in validate_environment
+    raise ValueError(
+    ...<6 lines>...
+    )
+ValueError: Some modules are dispatched on the CPU or the disk. Make sure you have enough GPU RAM to fit the quantized model. If you want to dispatch the model on the CPU or the disk while keeping these modules in 32-bit, you need to set `llm_int8_enable_fp32_cpu_offload=True` and pass a custom `device_map` to `from_pretrained`. Check https://huggingface.co/docs/transformers/main/en/main_classes/quantization#offload-between-cpu-and-gpu for more details. 
+2026-01-28 23:26:17,630 - __main__ - ERROR - Experiment prompt_ablation failed
+Traceback (most recent call last):
+  File "/home/bsada1/coderepo/MedMCQA-Robustness-Study/main.py", line 211, in main
+    run_experiment(
+    ~~~~~~~~~~~~~~^
+        experiment_name=exp_name,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+        output_dir=args.output_dir
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/bsada1/coderepo/MedMCQA-Robustness-Study/scripts/run_experiment.py", line 83, in run_experiment
+    model.load()
+    ~~~~~~~~~~^^
+  File "/home/bsada1/coderepo/MedMCQA-Robustness-Study/scripts/../src/models/medgemma.py", line 99, in load
+    self.model = AutoModelForCausalLM.from_pretrained(
+                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        self.model_id,
+        ^^^^^^^^^^^^^^
+        **model_kwargs
+        ^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/bsada1/miniconda3/lib/python3.13/site-packages/transformers/models/auto/auto_factory.py", line 604, in from_pretrained
+    return model_class.from_pretrained(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        pretrained_model_name_or_path, *model_args, config=config, **hub_kwargs, **kwargs
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/bsada1/miniconda3/lib/python3.13/site-packages/transformers/modeling_utils.py", line 277, in _wrapper
+    return func(*args, **kwargs)
+  File "/home/bsada1/miniconda3/lib/python3.13/site-packages/transformers/modeling_utils.py", line 5029, in from_pretrained
+    device_map = _get_device_map(model, device_map, max_memory, hf_quantizer, dtype, keep_in_fp32_regex)
+  File "/home/bsada1/miniconda3/lib/python3.13/site-packages/transformers/modeling_utils.py", line 1365, in _get_device_map
+    hf_quantizer.validate_environment(device_map=device_map)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/bsada1/miniconda3/lib/python3.13/site-packages/transformers/quantizers/quantizer_bnb_4bit.py", line 127, in validate_environment
+    raise ValueError(
+    ...<6 lines>...
+    )
+ValueError: Some modules are dispatched on the CPU or the disk. Make sure you have enough GPU RAM to fit the quantized model. If you want to dispatch the model on the CPU or the disk while keeping these modules in 32-bit, you need to set `llm_int8_enable_fp32_cpu_offload=True` and pass a custom `device_map` to `from_pretrained`. Check https://huggingface.co/docs/transformers/main/en/main_classes/quantization#offload-between-cpu-and-gpu for more details. 
+2026-01-28 23:26:17,698 - __main__ - ERROR - Experiment option_order failed
+Traceback (most recent call last):
+  File "/home/bsada1/coderepo/MedMCQA-Robustness-Study/main.py", line 211, in main
+    run_experiment(
+    ~~~~~~~~~~~~~~^
+        experiment_name=exp_name,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+        output_dir=args.output_dir
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/bsada1/coderepo/MedMCQA-Robustness-Study/scripts/run_experiment.py", line 83, in run_experiment
+    model.load()
+    ~~~~~~~~~~^^
+  File "/home/bsada1/coderepo/MedMCQA-Robustness-Study/scripts/../src/models/medgemma.py", line 99, in load
+    self.model = AutoModelForCausalLM.from_pretrained(
+                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        self.model_id,
+        ^^^^^^^^^^^^^^
+        **model_kwargs
+        ^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/bsada1/miniconda3/lib/python3.13/site-packages/transformers/models/auto/auto_factory.py", line 604, in from_pretrained
+    return model_class.from_pretrained(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        pretrained_model_name_or_path, *model_args, config=config, **hub_kwargs, **kwargs
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/bsada1/miniconda3/lib/python3.13/site-packages/transformers/modeling_utils.py", line 277, in _wrapper
+    return func(*args, **kwargs)
+  File "/home/bsada1/miniconda3/lib/python3.13/site-packages/transformers/modeling_utils.py", line 5029, in from_pretrained
+    device_map = _get_device_map(model, device_map, max_memory, hf_quantizer, dtype, keep_in_fp32_regex)
+  File "/home/bsada1/miniconda3/lib/python3.13/site-packages/transformers/modeling_utils.py", line 1365, in _get_device_map
+    hf_quantizer.validate_environment(device_map=device_map)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/bsada1/miniconda3/lib/python3.13/site-packages/transformers/quantizers/quantizer_bnb_4bit.py", line 127, in validate_environment
+    raise ValueError(
+    ...<6 lines>...
+    )
+ValueError: Some modules are dispatched on the CPU or the disk. Make sure you have enough GPU RAM to fit the quantized model. If you want to dispatch the model on the CPU or the disk while keeping these modules in 32-bit, you need to set `llm_int8_enable_fp32_cpu_offload=True` and pass a custom `device_map` to `from_pretrained`. Check https://huggingface.co/docs/transformers/main/en/main_classes/quantization#offload-between-cpu-and-gpu for more details. 
+2026-01-28 23:26:23,370 - scripts.run_experiment - INFO - Running experiment: self_consistency
+2026-01-28 23:26:23,370 - scripts.run_experiment - INFO - Model: 27b
+2026-01-28 23:26:23,370 - src.models.medgemma - INFO - Loading google/medgemma-27b-text-it with quantization=4bit
+2026-01-28 23:26:24,770 - src.models.medgemma - INFO - Flash attention not available, using default attention
+2026-01-28 23:26:41,261 - src.models.medgemma - INFO - Model loaded successfully on cuda:0
+2026-01-28 23:26:41,261 - src.experiments.base - INFO - Starting experiment: exp3_evidence_conditioning
+2026-01-28 23:26:41,261 - src.experiments.base - INFO - Model: medgemma_4b
+2026-01-28 23:26:42,064 - src.experiments.exp3_evidence_conditioning - INFO - Loaded 50 PubMedQA items
+2026-01-28 23:26:42,064 - src.experiments.exp3_evidence_conditioning - INFO - Running condition: question_only
+2026-01-28 23:26:42,080 - src.experiments.exp3_evidence_conditioning - INFO - Running condition: full_context
+2026-01-28 23:26:42,093 - src.experiments.exp3_evidence_conditioning - INFO - Running condition: truncated_50
+2026-01-28 23:26:42,106 - src.experiments.exp3_evidence_conditioning - INFO - Running condition: truncated_25
+2026-01-28 23:26:42,118 - src.experiments.exp3_evidence_conditioning - INFO - Running condition: background_only
+2026-01-28 23:26:42,131 - src.experiments.exp3_evidence_conditioning - INFO - Running condition: results_only
+2026-01-28 23:26:42,148 - src.experiments.base - INFO - Results saved to outputs/results/exp3_evidence_conditioning_medgemma_4b_20260128_232641.json
+2026-01-28 23:26:42,148 - scripts.run_experiment - INFO - Experiment completed. Results saved to: outputs/results/exp3_evidence_conditioning_medgemma_4b_20260128_232641.json
+2026-01-28 23:26:57,216 - __main__ - ERROR - Experiment self_consistency failed
+Traceback (most recent call last):
+  File "/home/bsada1/coderepo/MedMCQA-Robustness-Study/main.py", line 211, in main
+    run_experiment(
+    ~~~~~~~~~~~~~~^
+        experiment_name=exp_name,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+        output_dir=args.output_dir
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/bsada1/coderepo/MedMCQA-Robustness-Study/scripts/run_experiment.py", line 83, in run_experiment
+    model.load()
+    ~~~~~~~~~~^^
+  File "/home/bsada1/coderepo/MedMCQA-Robustness-Study/scripts/../src/models/medgemma.py", line 99, in load
+    self.model = AutoModelForCausalLM.from_pretrained(
+                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        self.model_id,
+        ^^^^^^^^^^^^^^
+        **model_kwargs
+        ^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/bsada1/miniconda3/lib/python3.13/site-packages/transformers/models/auto/auto_factory.py", line 604, in from_pretrained
+    return model_class.from_pretrained(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        pretrained_model_name_or_path, *model_args, config=config, **hub_kwargs, **kwargs
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/bsada1/miniconda3/lib/python3.13/site-packages/transformers/modeling_utils.py", line 277, in _wrapper
+    return func(*args, **kwargs)
+  File "/home/bsada1/miniconda3/lib/python3.13/site-packages/transformers/modeling_utils.py", line 5029, in from_pretrained
+    device_map = _get_device_map(model, device_map, max_memory, hf_quantizer, dtype, keep_in_fp32_regex)
+  File "/home/bsada1/miniconda3/lib/python3.13/site-packages/transformers/modeling_utils.py", line 1365, in _get_device_map
+    hf_quantizer.validate_environment(device_map=device_map)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/bsada1/miniconda3/lib/python3.13/site-packages/transformers/quantizers/quantizer_bnb_4bit.py", line 127, in validate_environment
+    raise ValueError(
+    ...<6 lines>...
+    )
+ValueError: Some modules are dispatched on the CPU or the disk. Make sure you have enough GPU RAM to fit the quantized model. If you want to dispatch the model on the CPU or the disk while keeping these modules in 32-bit, you need to set `llm_int8_enable_fp32_cpu_offload=True` and pass a custom `device_map` to `from_pretrained`. Check https://huggingface.co/docs/transformers/main/en/main_classes/quantization#offload-between-cpu-and-gpu for more details. 
+2026-01-28 23:26:57,324 - src.models.medgemma - INFO - Model loaded successfully on cuda:0
+2026-01-28 23:26:57,325 - src.experiments.base - INFO - Starting experiment: exp2_option_order
+2026-01-28 23:26:57,325 - src.experiments.base - INFO - Model: medgemma_4b
+2026-01-28 23:26:58,098 - src.experiments.exp2_option_order - INFO - Loaded 50 MedMCQA items
+2026-01-28 23:26:58,098 - src.experiments.exp2_option_order - INFO - Running original order...
+2026-01-28 23:26:58,117 - src.experiments.exp2_option_order - INFO - Running perturbation: random_shuffle
+2026-01-28 23:26:58,134 - src.experiments.exp2_option_order - INFO - Running perturbation: rotate_1
+2026-01-28 23:26:58,146 - src.experiments.exp2_option_order - INFO - Running perturbation: rotate_2
+2026-01-28 23:26:58,160 - src.experiments.exp2_option_order - INFO - Running perturbation: distractor_swap
+2026-01-28 23:26:58,190 - src.experiments.base - INFO - Results saved to outputs/results/exp2_option_order_medgemma_4b_20260128_232657.json
+2026-01-28 23:26:58,190 - scripts.run_experiment - INFO - Experiment completed. Results saved to: outputs/results/exp2_option_order_medgemma_4b_20260128_232657.json
+2026-01-28 23:26:59,735 - src.models.medgemma - INFO - Model loaded successfully on cuda:0
+2026-01-28 23:26:59,736 - src.experiments.base - INFO - Starting experiment: exp1_prompt_ablation
+2026-01-28 23:26:59,736 - src.experiments.base - INFO - Model: medgemma_4b
+2026-01-28 23:27:00,418 - src.experiments.exp1_prompt_ablation - INFO - Loaded 50 MedMCQA items
+2026-01-28 23:27:00,419 - src.experiments.exp1_prompt_ablation - INFO - Running condition: zero_shot_direct
+2026-01-28 23:27:00,446 - src.experiments.exp1_prompt_ablation - INFO - Running condition: zero_shot_cot
+2026-01-28 23:27:00,466 - src.experiments.exp1_prompt_ablation - INFO - Running condition: few_shot_3_direct
+2026-01-28 23:27:00,479 - src.experiments.exp1_prompt_ablation - INFO - Running condition: few_shot_3_cot
+2026-01-28 23:27:00,488 - src.experiments.base - INFO - Processing 38 items (cache hits: 12)
+2026-01-28 23:29:13,360 - src.experiments.exp1_prompt_ablation - INFO - Running condition: answer_only
+2026-01-28 23:29:13,368 - src.experiments.base - INFO - Processing 50 items (cache hits: 0)
+2026-01-28 23:32:07,642 - src.experiments.base - INFO - Results saved to outputs/results/exp1_prompt_ablation_medgemma_4b_20260128_232659.json
+2026-01-28 23:32:07,642 - src.utils.checkpointing - INFO - Checkpoint cleared: ./outputs/checkpoints/exp1_prompt_ablation_medgemma_4b_checkpoint.json
+2026-01-28 23:32:07,642 - scripts.run_experiment - INFO - Experiment completed. Results saved to: outputs/results/exp1_prompt_ablation_medgemma_4b_20260128_232659.json
+2026-01-28 23:46:35,473 - scripts.run_experiment - INFO - Running experiment: self_consistency
+2026-01-28 23:46:35,473 - scripts.run_experiment - INFO - Model: 4b
+2026-01-28 23:46:35,473 - src.models.medgemma - INFO - Loading google/medgemma-4b-it with quantization=None
+2026-01-28 23:46:35,490 - scripts.run_experiment - INFO - Running experiment: prompt_ablation
+2026-01-28 23:46:35,491 - scripts.run_experiment - INFO - Model: 4b
+2026-01-28 23:46:35,491 - src.models.medgemma - INFO - Loading google/medgemma-4b-it with quantization=None
+2026-01-28 23:46:35,591 - scripts.run_experiment - INFO - Running experiment: prompt_ablation
+2026-01-28 23:46:35,592 - scripts.run_experiment - INFO - Model: 27b
+2026-01-28 23:46:35,592 - src.models.medgemma - INFO - Loading google/medgemma-27b-text-it with quantization=4bit
+2026-01-28 23:46:35,592 - scripts.run_experiment - INFO - Running experiment: evidence_conditioning
+2026-01-28 23:46:35,593 - scripts.run_experiment - INFO - Model: 4b
+2026-01-28 23:46:35,593 - src.models.medgemma - INFO - Loading google/medgemma-4b-it with quantization=None
+2026-01-28 23:46:35,679 - scripts.run_experiment - INFO - Running experiment: evidence_conditioning
+2026-01-28 23:46:35,680 - scripts.run_experiment - INFO - Model: 27b
+2026-01-28 23:46:35,680 - src.models.medgemma - INFO - Loading google/medgemma-27b-text-it with quantization=4bit
+2026-01-28 23:46:35,697 - scripts.run_experiment - INFO - Running experiment: option_order
+2026-01-28 23:46:35,698 - scripts.run_experiment - INFO - Model: 27b
+2026-01-28 23:46:35,698 - src.models.medgemma - INFO - Loading google/medgemma-27b-text-it with quantization=4bit
+2026-01-28 23:46:35,748 - scripts.run_experiment - INFO - Running experiment: option_order
+2026-01-28 23:46:35,748 - scripts.run_experiment - INFO - Model: 4b
+2026-01-28 23:46:35,748 - src.models.medgemma - INFO - Loading google/medgemma-4b-it with quantization=None
+2026-01-28 23:46:36,681 - src.models.medgemma - INFO - Flash attention not available, using default attention
+2026-01-28 23:46:36,701 - src.models.medgemma - INFO - Flash attention not available, using default attention
+2026-01-28 23:46:36,772 - src.models.medgemma - INFO - Flash attention not available, using default attention
+2026-01-28 23:46:36,824 - src.models.medgemma - INFO - Flash attention not available, using default attention
+2026-01-28 23:46:36,889 - src.models.medgemma - INFO - Flash attention not available, using default attention
+2026-01-28 23:46:36,993 - src.models.medgemma - INFO - Flash attention not available, using default attention
+2026-01-28 23:46:37,080 - src.models.medgemma - INFO - Flash attention not available, using default attention
+2026-01-28 23:50:06,956 - accelerate.utils.modeling - INFO - Device 0 seems unavailable, Proceeding to check subsequent devices.
+2026-01-28 23:50:07,245 - src.models.medgemma - INFO - Model loaded successfully on cpu
+2026-01-28 23:50:07,246 - src.experiments.base - INFO - Starting experiment: exp4_self_consistency
+2026-01-28 23:50:07,246 - src.experiments.base - INFO - Model: medgemma_4b
+2026-01-28 23:50:07,246 - src.experiments.exp4_self_consistency - INFO - Running self-consistency on MedMCQA...
+2026-01-28 23:50:07,431 - accelerate.utils.modeling - INFO - We will use 90% of the memory on device 0 for storing the model, and 10% for the buffer to avoid OOM. You can set `max_memory` in to a higher value to use more memory (at your own risk).
+2026-01-28 23:50:07,458 - accelerate.utils.modeling - INFO - We will use 90% of the memory on device 0 for storing the model, and 10% for the buffer to avoid OOM. You can set `max_memory` in to a higher value to use more memory (at your own risk).
+2026-01-28 23:50:07,507 - accelerate.utils.modeling - INFO - We will use 90% of the memory on device 0 for storing the model, and 10% for the buffer to avoid OOM. You can set `max_memory` in to a higher value to use more memory (at your own risk).
+2026-01-28 23:50:07,914 - src.experiments.exp4_self_consistency - INFO - MedMCQA with N=1 samples
+2026-01-28 23:50:08,598 - accelerate.utils.modeling - INFO - We will use 90% of the memory on device 0 for storing the model, and 10% for the buffer to avoid OOM. You can set `max_memory` in to a higher value to use more memory (at your own risk).
+2026-01-28 23:50:09,049 - accelerate.utils.modeling - INFO - We will use 90% of the memory on device 0 for storing the model, and 10% for the buffer to avoid OOM. You can set `max_memory` in to a higher value to use more memory (at your own risk).
+2026-01-28 23:50:09,078 - accelerate.utils.modeling - INFO - We will use 90% of the memory on device 0 for storing the model, and 10% for the buffer to avoid OOM. You can set `max_memory` in to a higher value to use more memory (at your own risk).
+2026-01-28 23:50:09,213 - src.models.medgemma - INFO - Model loaded successfully on cuda:0
+2026-01-28 23:50:09,214 - src.experiments.base - INFO - Starting experiment: exp1_prompt_ablation
+2026-01-28 23:50:09,214 - src.experiments.base - INFO - Model: medgemma_4b
+2026-01-28 23:50:09,308 - src.models.medgemma - INFO - Model loaded successfully on cuda:0
+2026-01-28 23:50:09,309 - src.experiments.base - INFO - Starting experiment: exp2_option_order
+2026-01-28 23:50:09,309 - src.experiments.base - INFO - Model: medgemma_4b
+2026-01-28 23:50:09,807 - src.experiments.exp1_prompt_ablation - INFO - Loaded 50 MedMCQA items
+2026-01-28 23:50:09,807 - src.experiments.exp1_prompt_ablation - INFO - Running condition: zero_shot_direct
+2026-01-28 23:50:09,831 - src.experiments.exp1_prompt_ablation - INFO - Running condition: zero_shot_cot
+2026-01-28 23:50:09,847 - src.experiments.exp1_prompt_ablation - INFO - Running condition: few_shot_3_direct
+2026-01-28 23:50:09,859 - src.experiments.exp1_prompt_ablation - INFO - Running condition: few_shot_3_cot
+2026-01-28 23:50:09,864 - src.experiments.exp2_option_order - INFO - Loaded 50 MedMCQA items
+2026-01-28 23:50:09,864 - src.experiments.exp2_option_order - INFO - Running original order...
+2026-01-28 23:50:09,871 - src.experiments.exp1_prompt_ablation - INFO - Running condition: answer_only
+2026-01-28 23:50:09,893 - src.experiments.exp2_option_order - INFO - Running perturbation: random_shuffle
+2026-01-28 23:50:09,915 - src.experiments.exp2_option_order - INFO - Running perturbation: rotate_1
+2026-01-28 23:50:09,928 - src.experiments.exp2_option_order - INFO - Running perturbation: rotate_2
+2026-01-28 23:50:09,941 - src.experiments.exp2_option_order - INFO - Running perturbation: distractor_swap
+2026-01-28 23:50:09,966 - src.experiments.base - INFO - Results saved to outputs/results/exp1_prompt_ablation_medgemma_4b_20260128_235009.json
+2026-01-28 23:50:09,966 - scripts.run_experiment - INFO - Experiment completed. Results saved to: outputs/results/exp1_prompt_ablation_medgemma_4b_20260128_235009.json
+2026-01-28 23:50:09,974 - src.experiments.base - INFO - Results saved to outputs/results/exp2_option_order_medgemma_4b_20260128_235009.json
+2026-01-28 23:50:09,974 - scripts.run_experiment - INFO - Experiment completed. Results saved to: outputs/results/exp2_option_order_medgemma_4b_20260128_235009.json
+2026-01-28 23:50:10,223 - src.models.medgemma - INFO - Model loaded successfully on cuda:0
+2026-01-28 23:50:10,224 - src.experiments.base - INFO - Starting experiment: exp3_evidence_conditioning
+2026-01-28 23:50:10,224 - src.experiments.base - INFO - Model: medgemma_4b
+2026-01-28 23:50:11,035 - src.experiments.exp3_evidence_conditioning - INFO - Loaded 50 PubMedQA items
+2026-01-28 23:50:11,035 - src.experiments.exp3_evidence_conditioning - INFO - Running condition: question_only
+2026-01-28 23:50:11,050 - src.experiments.exp3_evidence_conditioning - INFO - Running condition: full_context
+2026-01-28 23:50:11,063 - src.experiments.exp3_evidence_conditioning - INFO - Running condition: truncated_50
+2026-01-28 23:50:11,079 - src.experiments.exp3_evidence_conditioning - INFO - Running condition: truncated_25
+2026-01-28 23:50:11,093 - src.experiments.exp3_evidence_conditioning - INFO - Running condition: background_only
+2026-01-28 23:50:11,107 - src.experiments.exp3_evidence_conditioning - INFO - Running condition: results_only
+2026-01-28 23:50:11,129 - src.experiments.base - INFO - Results saved to outputs/results/exp3_evidence_conditioning_medgemma_4b_20260128_235010.json
+2026-01-28 23:50:11,129 - scripts.run_experiment - INFO - Experiment completed. Results saved to: outputs/results/exp3_evidence_conditioning_medgemma_4b_20260128_235010.json
+2026-01-28 23:50:19,182 - scripts.run_experiment - INFO - Running experiment: self_consistency
+2026-01-28 23:50:19,182 - scripts.run_experiment - INFO - Model: 27b
+2026-01-28 23:50:19,182 - src.models.medgemma - INFO - Loading google/medgemma-27b-text-it with quantization=4bit
+2026-01-28 23:50:20,647 - src.models.medgemma - INFO - Flash attention not available, using default attention
+2026-01-28 23:51:08,585 - accelerate.utils.modeling - INFO - We will use 90% of the memory on device 0 for storing the model, and 10% for the buffer to avoid OOM. You can set `max_memory` in to a higher value to use more memory (at your own risk).
+2026-01-28 23:51:36,199 - src.models.medgemma - INFO - Model loaded successfully on cuda:0
+2026-01-28 23:51:36,200 - src.experiments.base - INFO - Starting experiment: exp1_prompt_ablation
+2026-01-28 23:51:36,200 - src.experiments.base - INFO - Model: medgemma_27b_4bit
+2026-01-28 23:51:36,205 - src.models.medgemma - INFO - Model loaded successfully on cuda:0
+2026-01-28 23:51:36,206 - src.experiments.base - INFO - Starting experiment: exp2_option_order
+2026-01-28 23:51:36,206 - src.experiments.base - INFO - Model: medgemma_27b_4bit
+2026-01-28 23:51:36,800 - src.experiments.exp2_option_order - INFO - Loaded 50 MedMCQA items
+2026-01-28 23:51:36,800 - src.experiments.exp2_option_order - INFO - Running original order...
+2026-01-28 23:51:36,809 - src.experiments.base - INFO - Processing 50 items (cache hits: 0)
+2026-01-28 23:51:36,824 - src.experiments.exp1_prompt_ablation - INFO - Loaded 50 MedMCQA items
+2026-01-28 23:51:36,824 - src.experiments.exp1_prompt_ablation - INFO - Running condition: zero_shot_direct
+2026-01-28 23:51:36,840 - src.experiments.base - INFO - Processing 50 items (cache hits: 0)
+2026-01-28 23:51:40,286 - src.models.medgemma - INFO - Model loaded successfully on cuda:0
+2026-01-28 23:51:40,287 - src.experiments.base - INFO - Starting experiment: exp3_evidence_conditioning
+2026-01-28 23:51:40,287 - src.experiments.base - INFO - Model: medgemma_27b_4bit
+2026-01-28 23:51:40,964 - src.experiments.exp3_evidence_conditioning - INFO - Loaded 50 PubMedQA items
+2026-01-28 23:51:40,964 - src.experiments.exp3_evidence_conditioning - INFO - Running condition: question_only
+2026-01-28 23:51:40,984 - src.experiments.base - INFO - Processing 50 items (cache hits: 0)
+2026-01-28 23:51:55,341 - src.models.medgemma - INFO - Model loaded successfully on cuda:0
+2026-01-28 23:51:55,342 - src.experiments.base - INFO - Starting experiment: exp4_self_consistency
+2026-01-28 23:51:55,342 - src.experiments.base - INFO - Model: medgemma_27b_4bit
+2026-01-28 23:51:55,342 - src.experiments.exp4_self_consistency - INFO - Running self-consistency on MedMCQA...
+2026-01-28 23:51:55,921 - src.experiments.exp4_self_consistency - INFO - MedMCQA with N=1 samples
+2026-01-28 23:51:56,877 - __main__ - ERROR - Experiment self_consistency failed
+Traceback (most recent call last):
+  File "/home/bsada1/coderepo/MedMCQA-Robustness-Study/main.py", line 211, in main
+    run_experiment(
+    ~~~~~~~~~~~~~~^
+        experiment_name=exp_name,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+        output_dir=args.output_dir
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/bsada1/coderepo/MedMCQA-Robustness-Study/scripts/run_experiment.py", line 101, in run_experiment
+    result = experiment.full_run()
+  File "/home/bsada1/coderepo/MedMCQA-Robustness-Study/scripts/../src/experiments/base.py", line 255, in full_run
+    results = self.run()
+  File "/home/bsada1/coderepo/MedMCQA-Robustness-Study/scripts/../src/experiments/exp4_self_consistency.py", line 66, in run
+    results['medmcqa'][f'n_{n_samples}'] = self._run_self_consistency(
+                                           ~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        data=medmcqa_data,
+        ^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+        temperature=temperature
+        ^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/bsada1/coderepo/MedMCQA-Robustness-Study/scripts/../src/experiments/exp4_self_consistency.py", line 135, in _run_self_consistency
+    outputs = self.model.generate([prompt], **generation_config)
+  File "/home/bsada1/coderepo/MedMCQA-Robustness-Study/scripts/../src/models/medgemma.py", line 145, in generate
+    outputs = self.model.generate(**inputs, **gen_kwargs)
+  File "/home/bsada1/miniconda3/lib/python3.13/site-packages/torch/utils/_contextlib.py", line 124, in decorate_context
+    return func(*args, **kwargs)
+  File "/home/bsada1/miniconda3/lib/python3.13/site-packages/transformers/generation/utils.py", line 2564, in generate
+    result = decoding_method(
+        self,
+    ...<5 lines>...
+        **model_kwargs,
+    )
+  File "/home/bsada1/miniconda3/lib/python3.13/site-packages/transformers/generation/utils.py", line 2829, in _sample
+    next_tokens = torch.multinomial(probs, num_samples=1).squeeze(1)
+                  ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+torch.AcceleratorError: CUDA error: device-side assert triggered
+Search for `cudaErrorAssert' in https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html for more information.
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+2026-01-29 00:05:57,363 - src.experiments.exp1_prompt_ablation - INFO - Running condition: zero_shot_cot
+2026-01-29 00:05:57,383 - src.experiments.base - INFO - Processing 50 items (cache hits: 0)
+2026-01-29 00:06:24,465 - src.experiments.exp2_option_order - INFO - Running perturbation: random_shuffle
+2026-01-29 00:06:24,473 - src.experiments.base - INFO - Processing 47 items (cache hits: 3)
+2026-01-29 00:20:02,706 - src.experiments.exp2_option_order - INFO - Running perturbation: rotate_1
+2026-01-29 00:20:02,723 - src.experiments.base - INFO - Processing 49 items (cache hits: 1)
+2026-01-29 00:20:18,626 - src.experiments.exp1_prompt_ablation - INFO - Running condition: few_shot_3_direct
+2026-01-29 00:20:18,659 - src.experiments.base - INFO - Processing 50 items (cache hits: 0)
+2026-01-29 00:34:16,321 - src.experiments.exp2_option_order - INFO - Running perturbation: rotate_2
+2026-01-29 00:34:16,330 - src.experiments.base - INFO - Processing 48 items (cache hits: 2)
+2026-01-29 00:34:49,333 - src.experiments.exp1_prompt_ablation - INFO - Running condition: few_shot_3_cot
+2026-01-29 00:34:49,347 - src.experiments.base - INFO - Processing 50 items (cache hits: 0)
+2026-01-29 00:37:00,128 - src.experiments.exp3_evidence_conditioning - INFO - Running condition: full_context
+2026-01-29 00:37:00,145 - src.experiments.base - INFO - Processing 50 items (cache hits: 0)
+2026-01-29 00:47:54,065 - src.experiments.exp2_option_order - INFO - Running perturbation: distractor_swap
+2026-01-29 00:47:54,083 - src.experiments.base - INFO - Processing 50 items (cache hits: 0)
+2026-01-29 00:49:37,626 - src.experiments.exp1_prompt_ablation - INFO - Running condition: answer_only
+2026-01-29 00:49:37,641 - src.experiments.base - INFO - Processing 50 items (cache hits: 0)
+2026-01-29 01:02:40,366 - src.experiments.base - INFO - Results saved to outputs/results/exp2_option_order_medgemma_27b_4bit_20260128_235136.json
+2026-01-29 01:02:40,366 - src.utils.checkpointing - INFO - Checkpoint cleared: ./outputs/checkpoints/exp2_option_order_medgemma_27b_4bit_checkpoint.json
+2026-01-29 01:02:40,367 - scripts.run_experiment - INFO - Experiment completed. Results saved to: outputs/results/exp2_option_order_medgemma_27b_4bit_20260128_235136.json
+2026-01-29 01:03:56,988 - src.experiments.base - INFO - Results saved to outputs/results/exp1_prompt_ablation_medgemma_27b_4bit_20260128_235136.json
+2026-01-29 01:03:56,988 - src.utils.checkpointing - INFO - Checkpoint cleared: ./outputs/checkpoints/exp1_prompt_ablation_medgemma_27b_4bit_checkpoint.json
+2026-01-29 01:03:56,988 - scripts.run_experiment - INFO - Experiment completed. Results saved to: outputs/results/exp1_prompt_ablation_medgemma_27b_4bit_20260128_235136.json
+2026-01-29 01:25:44,593 - src.experiments.exp3_evidence_conditioning - INFO - Running condition: truncated_50
+2026-01-29 01:25:44,604 - src.experiments.base - INFO - Processing 50 items (cache hits: 0)
+2026-01-29 02:13:04,164 - src.experiments.exp3_evidence_conditioning - INFO - Running condition: truncated_25
+2026-01-29 02:13:04,174 - src.experiments.base - INFO - Processing 50 items (cache hits: 0)
+2026-01-29 03:00:22,443 - src.experiments.exp3_evidence_conditioning - INFO - Running condition: background_only
+2026-01-29 03:00:22,452 - src.experiments.base - INFO - Processing 50 items (cache hits: 0)
+2026-01-29 03:47:30,061 - src.experiments.exp3_evidence_conditioning - INFO - Running condition: results_only
+2026-01-29 03:47:30,077 - src.experiments.base - INFO - Processing 50 items (cache hits: 0)
+2026-01-29 04:35:07,033 - src.experiments.base - INFO - Results saved to outputs/results/exp3_evidence_conditioning_medgemma_27b_4bit_20260128_235140.json
+2026-01-29 04:35:07,033 - src.utils.checkpointing - INFO - Checkpoint cleared: ./outputs/checkpoints/exp3_evidence_conditioning_medgemma_27b_4bit_checkpoint.json
+2026-01-29 04:35:07,033 - scripts.run_experiment - INFO - Experiment completed. Results saved to: outputs/results/exp3_evidence_conditioning_medgemma_27b_4bit_20260128_235140.json
+2026-01-29 07:54:05,215 - scripts.run_experiment - INFO - Running experiment: evidence_conditioning
+2026-01-29 07:54:05,215 - scripts.run_experiment - INFO - Model: 4b
+2026-01-29 07:54:05,215 - src.models.medgemma - INFO - Loading google/medgemma-4b-it with quantization=None
+2026-01-29 07:54:05,298 - scripts.run_experiment - INFO - Running experiment: option_order
+2026-01-29 07:54:05,298 - scripts.run_experiment - INFO - Model: 4b
+2026-01-29 07:54:05,298 - src.models.medgemma - INFO - Loading google/medgemma-4b-it with quantization=None
+2026-01-29 07:54:05,299 - scripts.run_experiment - INFO - Running experiment: self_consistency
+2026-01-29 07:54:05,299 - scripts.run_experiment - INFO - Model: 4b
+2026-01-29 07:54:05,299 - src.models.medgemma - INFO - Loading google/medgemma-4b-it with quantization=None
+2026-01-29 07:54:05,456 - scripts.run_experiment - INFO - Running experiment: prompt_ablation
+2026-01-29 07:54:05,456 - scripts.run_experiment - INFO - Model: 4b
+2026-01-29 07:54:05,456 - src.models.medgemma - INFO - Loading google/medgemma-4b-it with quantization=None
+2026-01-29 07:54:06,637 - src.models.medgemma - INFO - Flash attention not available, using default attention
+2026-01-29 07:54:06,639 - src.models.medgemma - INFO - Flash attention not available, using default attention
+2026-01-29 07:54:06,675 - src.models.medgemma - INFO - Flash attention not available, using default attention
+2026-01-29 07:54:06,752 - src.models.medgemma - INFO - Flash attention not available, using default attention
+2026-01-29 07:56:36,839 - accelerate.utils.modeling - INFO - We will use 90% of the memory on device 0 for storing the model, and 10% for the buffer to avoid OOM. You can set `max_memory` in to a higher value to use more memory (at your own risk).
+2026-01-29 07:56:36,989 - accelerate.utils.modeling - INFO - We will use 90% of the memory on device 0 for storing the model, and 10% for the buffer to avoid OOM. You can set `max_memory` in to a higher value to use more memory (at your own risk).
+2026-01-29 07:56:37,001 - accelerate.utils.modeling - INFO - We will use 90% of the memory on device 0 for storing the model, and 10% for the buffer to avoid OOM. You can set `max_memory` in to a higher value to use more memory (at your own risk).
+2026-01-29 07:56:37,003 - accelerate.utils.modeling - INFO - We will use 90% of the memory on device 0 for storing the model, and 10% for the buffer to avoid OOM. You can set `max_memory` in to a higher value to use more memory (at your own risk).
+2026-01-29 07:56:38,980 - src.models.medgemma - INFO - Model loaded successfully on cuda:0
+2026-01-29 07:56:38,981 - src.experiments.base - INFO - Starting experiment: exp1_prompt_ablation
+2026-01-29 07:56:38,981 - src.experiments.base - INFO - Model: medgemma_4b
+2026-01-29 07:56:39,115 - src.models.medgemma - INFO - Model loaded successfully on cuda:0
+2026-01-29 07:56:39,117 - src.experiments.base - INFO - Starting experiment: exp4_self_consistency
+2026-01-29 07:56:39,117 - src.experiments.base - INFO - Model: medgemma_4b
+2026-01-29 07:56:39,117 - src.experiments.exp4_self_consistency - INFO - Running self-consistency on MedMCQA...
+2026-01-29 07:56:39,326 - src.models.medgemma - INFO - Model loaded successfully on cuda:0
+2026-01-29 07:56:39,330 - src.experiments.base - INFO - Starting experiment: exp2_option_order
+2026-01-29 07:56:39,330 - src.experiments.base - INFO - Model: medgemma_4b
+2026-01-29 07:56:39,418 - src.models.medgemma - INFO - Model loaded successfully on cuda:0
+2026-01-29 07:56:39,419 - src.experiments.base - INFO - Starting experiment: exp3_evidence_conditioning
+2026-01-29 07:56:39,419 - src.experiments.base - INFO - Model: medgemma_4b
+2026-01-29 07:56:40,160 - src.experiments.exp1_prompt_ablation - INFO - Loaded 4183 MedMCQA items
+2026-01-29 07:56:40,160 - src.experiments.exp1_prompt_ablation - INFO - Running condition: zero_shot_direct
+2026-01-29 07:56:40,231 - src.experiments.exp4_self_consistency - INFO - MedMCQA with N=1 samples
+2026-01-29 07:56:40,247 - src.experiments.exp2_option_order - INFO - Loaded 4183 MedMCQA items
+2026-01-29 07:56:40,248 - src.experiments.exp2_option_order - INFO - Running original order...
+2026-01-29 07:56:40,275 - src.experiments.exp3_evidence_conditioning - INFO - Loaded 1000 PubMedQA items
+2026-01-29 07:56:40,278 - src.experiments.exp3_evidence_conditioning - INFO - Running condition: question_only
+2026-01-29 07:56:40,495 - src.experiments.base - INFO - Processing 1000 items (cache hits: 0)
+2026-01-29 07:56:40,760 - src.experiments.base - INFO - Processing 4183 items (cache hits: 0)
+2026-01-29 07:56:40,859 - src.experiments.base - INFO - Processing 4183 items (cache hits: 0)
+2026-01-29 08:00:32,652 - src.experiments.exp3_evidence_conditioning - INFO - Running condition: full_context
+2026-01-29 08:00:32,807 - src.experiments.base - INFO - Processing 1000 items (cache hits: 0)
+2026-01-29 08:04:41,188 - src.experiments.exp3_evidence_conditioning - INFO - Running condition: truncated_50
+2026-01-29 08:04:41,378 - src.experiments.base - INFO - Processing 1000 items (cache hits: 0)
+2026-01-29 08:08:28,937 - src.experiments.exp3_evidence_conditioning - INFO - Running condition: truncated_25
+2026-01-29 08:08:29,131 - src.experiments.base - INFO - Processing 1000 items (cache hits: 0)
+2026-01-29 08:12:15,282 - src.experiments.exp3_evidence_conditioning - INFO - Running condition: background_only
+2026-01-29 08:12:15,472 - src.experiments.base - INFO - Processing 1000 items (cache hits: 0)
+2026-01-29 08:12:18,466 - src.experiments.exp1_prompt_ablation - INFO - Running condition: zero_shot_cot
+2026-01-29 08:12:19,096 - src.experiments.base - INFO - Processing 4183 items (cache hits: 0)
+2026-01-29 08:12:36,967 - src.experiments.exp2_option_order - INFO - Running perturbation: random_shuffle
+2026-01-29 08:12:37,688 - src.experiments.base - INFO - Processing 3990 items (cache hits: 193)
+2026-01-29 08:16:03,923 - src.experiments.exp3_evidence_conditioning - INFO - Running condition: results_only
+2026-01-29 08:16:04,098 - src.experiments.base - INFO - Processing 979 items (cache hits: 21)
+2026-01-29 08:19:54,405 - src.experiments.base - INFO - Results saved to outputs/results/exp3_evidence_conditioning_medgemma_4b_20260129_075639.json
+2026-01-29 08:19:54,405 - src.utils.checkpointing - INFO - Checkpoint cleared: ./outputs/checkpoints/exp3_evidence_conditioning_medgemma_4b_checkpoint.json
+2026-01-29 08:19:54,406 - scripts.run_experiment - INFO - Experiment completed. Results saved to: outputs/results/exp3_evidence_conditioning_medgemma_4b_20260129_075639.json
+2026-01-29 08:27:50,892 - src.experiments.exp2_option_order - INFO - Running perturbation: rotate_1
+2026-01-29 08:27:51,601 - src.experiments.base - INFO - Processing 4017 items (cache hits: 166)
+2026-01-29 08:28:04,039 - src.experiments.exp1_prompt_ablation - INFO - Running condition: few_shot_3_direct
+2026-01-29 08:28:04,668 - src.experiments.base - INFO - Processing 4183 items (cache hits: 0)
+2026-01-29 08:43:05,444 - src.experiments.exp2_option_order - INFO - Running perturbation: rotate_2
+2026-01-29 08:43:06,162 - src.experiments.base - INFO - Processing 3998 items (cache hits: 185)
+2026-01-29 08:44:16,000 - src.experiments.exp1_prompt_ablation - INFO - Running condition: few_shot_3_cot
+2026-01-29 08:44:16,759 - src.experiments.base - INFO - Processing 4183 items (cache hits: 0)
+2026-01-29 08:58:07,711 - src.experiments.exp2_option_order - INFO - Running perturbation: distractor_swap
+2026-01-29 08:58:08,462 - src.experiments.base - INFO - Processing 3996 items (cache hits: 187)
+2026-01-29 09:01:26,640 - src.experiments.exp1_prompt_ablation - INFO - Running condition: answer_only
+2026-01-29 09:01:27,296 - src.experiments.base - INFO - Processing 4183 items (cache hits: 0)
+2026-01-29 09:13:11,080 - src.experiments.base - INFO - Results saved to outputs/results/exp2_option_order_medgemma_4b_20260129_075639.json
+2026-01-29 09:13:11,081 - src.utils.checkpointing - INFO - Checkpoint cleared: ./outputs/checkpoints/exp2_option_order_medgemma_4b_checkpoint.json
+2026-01-29 09:13:11,081 - scripts.run_experiment - INFO - Experiment completed. Results saved to: outputs/results/exp2_option_order_medgemma_4b_20260129_075639.json
+2026-01-29 09:17:10,058 - src.experiments.base - INFO - Results saved to outputs/results/exp1_prompt_ablation_medgemma_4b_20260129_075638.json
+2026-01-29 09:17:10,059 - src.utils.checkpointing - INFO - Checkpoint cleared: ./outputs/checkpoints/exp1_prompt_ablation_medgemma_4b_checkpoint.json
+2026-01-29 09:17:10,060 - scripts.run_experiment - INFO - Experiment completed. Results saved to: outputs/results/exp1_prompt_ablation_medgemma_4b_20260129_075638.json
+2026-01-29 18:44:44,491 - scripts.run_experiment - INFO - Running experiment: self_consistency
+2026-01-29 18:44:44,491 - scripts.run_experiment - INFO - Model: 4b
+2026-01-29 18:44:44,491 - src.models.medgemma - INFO - Loading google/medgemma-4b-it with quantization=None
+2026-01-29 18:44:45,708 - src.models.medgemma - INFO - Flash attention not available, using default attention
+2026-01-29 18:45:12,528 - accelerate.utils.modeling - INFO - We will use 90% of the memory on device 0 for storing the model, and 10% for the buffer to avoid OOM. You can set `max_memory` in to a higher value to use more memory (at your own risk).
+2026-01-29 18:45:14,651 - src.models.medgemma - INFO - Model loaded successfully on cuda:0
+2026-01-29 18:45:14,652 - src.experiments.base - INFO - Starting experiment: exp4_self_consistency
+2026-01-29 18:45:14,652 - src.experiments.base - INFO - Model: medgemma_4b
+2026-01-29 18:45:14,652 - src.experiments.exp4_self_consistency - INFO - Running self-consistency on MedMCQA...
+2026-01-29 18:45:15,635 - src.experiments.exp4_self_consistency - INFO - MedMCQA with N=1 samples
+2026-01-29 19:11:32,869 - scripts.run_experiment - INFO - Running experiment: prompt_ablation
+2026-01-29 19:11:32,870 - scripts.run_experiment - INFO - Model: 27b-4bit
+2026-01-29 19:11:32,870 - src.models.medgemma - INFO - Loading google/medgemma-27b-text-it with quantization=4bit
+2026-01-29 19:11:34,055 - src.models.medgemma - INFO - Flash attention not available, using default attention
+2026-01-29 19:11:35,176 - scripts.run_experiment - INFO - Running experiment: option_order
+2026-01-29 19:11:35,176 - scripts.run_experiment - INFO - Model: 27b-4bit
+2026-01-29 19:11:35,176 - src.models.medgemma - INFO - Loading google/medgemma-27b-text-it with quantization=4bit
+2026-01-29 19:11:36,385 - src.models.medgemma - INFO - Flash attention not available, using default attention
+2026-01-29 19:11:37,404 - scripts.run_experiment - INFO - Running experiment: evidence_conditioning
+2026-01-29 19:11:37,405 - scripts.run_experiment - INFO - Model: 27b-4bit
+2026-01-29 19:11:37,405 - src.models.medgemma - INFO - Loading google/medgemma-27b-text-it with quantization=4bit
+2026-01-29 19:11:38,574 - src.models.medgemma - INFO - Flash attention not available, using default attention
+2026-01-29 19:13:16,274 - accelerate.utils.modeling - INFO - We will use 90% of the memory on device 0 for storing the model, and 10% for the buffer to avoid OOM. You can set `max_memory` in to a higher value to use more memory (at your own risk).
+2026-01-29 19:13:16,353 - accelerate.utils.modeling - INFO - We will use 90% of the memory on device 0 for storing the model, and 10% for the buffer to avoid OOM. You can set `max_memory` in to a higher value to use more memory (at your own risk).
+2026-01-29 19:13:16,369 - accelerate.utils.modeling - INFO - We will use 90% of the memory on device 0 for storing the model, and 10% for the buffer to avoid OOM. You can set `max_memory` in to a higher value to use more memory (at your own risk).
+2026-01-29 19:13:56,175 - src.models.medgemma - INFO - Model loaded successfully on cuda:0
+2026-01-29 19:13:56,175 - src.experiments.base - INFO - Starting experiment: exp2_option_order
+2026-01-29 19:13:56,176 - src.experiments.base - INFO - Model: medgemma_27b_4bit
+2026-01-29 19:13:56,227 - src.models.medgemma - INFO - Model loaded successfully on cuda:0
+2026-01-29 19:13:56,228 - src.experiments.base - INFO - Starting experiment: exp3_evidence_conditioning
+2026-01-29 19:13:56,228 - src.experiments.base - INFO - Model: medgemma_27b_4bit
+2026-01-29 19:13:57,109 - src.experiments.exp3_evidence_conditioning - INFO - Loaded 1000 PubMedQA items
+2026-01-29 19:13:57,110 - src.experiments.exp3_evidence_conditioning - INFO - Running condition: question_only
+2026-01-29 19:13:57,191 - src.experiments.exp2_option_order - INFO - Loaded 4183 MedMCQA items
+2026-01-29 19:13:57,192 - src.experiments.exp2_option_order - INFO - Running original order...
+2026-01-29 19:13:57,262 - src.experiments.base - INFO - Processing 950 items (cache hits: 50)
+2026-01-29 19:13:57,726 - src.experiments.base - INFO - Processing 4133 items (cache hits: 50)
+2026-01-29 19:14:01,202 - src.models.medgemma - INFO - Model loaded successfully on cuda:0
+2026-01-29 19:14:01,203 - src.experiments.base - INFO - Starting experiment: exp1_prompt_ablation
+2026-01-29 19:14:01,203 - src.experiments.base - INFO - Model: medgemma_27b_4bit
+2026-01-29 19:14:02,050 - src.experiments.exp1_prompt_ablation - INFO - Loaded 4183 MedMCQA items
+2026-01-29 19:14:02,050 - src.experiments.exp1_prompt_ablation - INFO - Running condition: zero_shot_direct
+2026-01-29 19:14:02,577 - src.experiments.base - INFO - Processing 4133 items (cache hits: 50)

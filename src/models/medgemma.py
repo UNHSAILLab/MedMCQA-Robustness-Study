@@ -41,7 +41,7 @@ class MedGemmaModel(BaseModel):
         self.model_id = self.MODEL_IDS[variant]
         self.quantization = quantization
         self.device_map = device_map
-        self.max_memory = max_memory or {0: "14GiB", "cpu": "30GiB"}
+        self.max_memory = max_memory  # Let transformers auto-detect available memory
         self.torch_dtype = getattr(torch, torch_dtype)
         self.use_flash_attention = use_flash_attention
 
@@ -77,8 +77,9 @@ class MedGemmaModel(BaseModel):
         # Prepare model kwargs
         model_kwargs = {
             "device_map": self.device_map,
-            "max_memory": self.max_memory,
         }
+        if self.max_memory:
+            model_kwargs["max_memory"] = self.max_memory
 
         if quant_config:
             model_kwargs["quantization_config"] = quant_config

@@ -11,6 +11,7 @@ import yaml
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 from src.models.medgemma import MedGemmaModel
+from src.models.medical_llms import MedicalLLM
 from src.experiments.exp1_prompt_ablation import PromptAblationExperiment
 from src.experiments.exp2_option_order import OptionOrderExperiment
 from src.experiments.exp3_evidence_conditioning import EvidenceConditioningExperiment
@@ -32,9 +33,16 @@ EXPERIMENTS = {
 }
 
 MODELS = {
-    '4b': {'variant': '4b', 'quantization': None},
-    '27b': {'variant': '27b', 'quantization': '4bit'},
-    '27b-8bit': {'variant': '27b', 'quantization': '8bit'},
+    # MedGemma variants
+    '4b': {'type': 'medgemma', 'variant': '4b', 'quantization': None},
+    '27b': {'type': 'medgemma', 'variant': '27b', 'quantization': None},  # Full precision
+    '27b-4bit': {'type': 'medgemma', 'variant': '27b', 'quantization': '4bit'},
+    '27b-8bit': {'type': 'medgemma', 'variant': '27b', 'quantization': '8bit'},
+    # Medical LLMs
+    'biomistral-7b': {'type': 'medical_llm', 'model_name': 'biomistral-7b', 'quantization': None},
+    'biomistral-7b-4bit': {'type': 'medical_llm', 'model_name': 'biomistral-7b', 'quantization': '4bit'},
+    'meditron-7b': {'type': 'medical_llm', 'model_name': 'meditron-7b', 'quantization': None},
+    'meditron-7b-4bit': {'type': 'medical_llm', 'model_name': 'meditron-7b', 'quantization': '4bit'},
 }
 
 
@@ -79,7 +87,17 @@ def run_experiment(
     if model_config is None:
         raise ValueError(f"Unknown model: {model_name}. Available: {list(MODELS.keys())}")
 
-    model = MedGemmaModel(**model_config)
+    # Copy config to avoid modifying the original
+    model_config = model_config.copy()
+    model_type = model_config.pop('type', 'medgemma')
+
+    if model_type == 'medgemma':
+        model = MedGemmaModel(**model_config)
+    elif model_type == 'medical_llm':
+        model = MedicalLLM(**model_config)
+    else:
+        raise ValueError(f"Unknown model type: {model_type}")
+
     model.load()
 
     # Set limit in config

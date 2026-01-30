@@ -139,11 +139,15 @@ def create_task_schedule(
     experiments: List[str],
     models: List[str],
     num_gpus: int,
-    limit: Optional[int] = None
+    limit: Optional[int] = None,
+    gpu_ids: Optional[List[int]] = None
 ) -> List[Task]:
     """Create a list of tasks distributed across GPUs."""
     tasks = []
     gpu_idx = 0
+
+    # Use explicit GPU IDs if provided, otherwise use 0 to num_gpus-1
+    available_gpus = gpu_ids if gpu_ids else list(range(num_gpus))
 
     for exp_key in experiments:
         if exp_key not in EXPERIMENTS:
@@ -161,7 +165,7 @@ def create_task_schedule(
                 name=f"{exp_key}_{model}",
                 experiment=exp_name,
                 model=model,
-                gpu_id=gpu_idx % num_gpus,
+                gpu_id=available_gpus[gpu_idx % len(available_gpus)],
                 limit=limit
             )
             tasks.append(task)
@@ -199,6 +203,13 @@ def main():
         type=int,
         default=8,
         help="Number of GPUs available (default: 8)"
+    )
+
+    parser.add_argument(
+        "--gpu-ids",
+        type=str,
+        default=None,
+        help="Comma-separated list of GPU IDs to use (e.g., '1,2,3,4,5,6,7'). Overrides --gpus."
     )
 
     parser.add_argument(
@@ -242,8 +253,14 @@ def main():
     experiments = list(EXPERIMENTS.keys()) if "all" in args.experiments else args.experiments
     models = list(MODELS.keys()) if "all" in args.models else args.models
 
+    # Parse GPU IDs if provided
+    gpu_ids = None
+    if args.gpu_ids:
+        gpu_ids = [int(g.strip()) for g in args.gpu_ids.split(",")]
+        print(f"Using specific GPUs: {gpu_ids}")
+
     # Create task schedule
-    tasks = create_task_schedule(experiments, models, args.gpus, args.limit)
+    tasks = create_task_schedule(experiments, models, args.gpus, args.limit, gpu_ids)
 
     if not tasks:
         print("No tasks to run!")
@@ -255,7 +272,8 @@ def main():
         print("\nDry run - not executing tasks")
         return
 
-    print(f"\nStarting {len(tasks)} tasks across {args.gpus} GPUs...")
+    num_workers = len(gpu_ids) if gpu_ids else args.gpus
+    print(f"\nStarting {len(tasks)} tasks across {num_workers} GPUs...")
     print(f"Start time: {datetime.now().isoformat()}\n")
 
     results = []
@@ -275,7 +293,7 @@ def main():
             by_gpu.setdefault(task.gpu_id, []).append(task)
 
         # Run tasks for each GPU in parallel
-        with ProcessPoolExecutor(max_workers=args.gpus) as executor:
+        with ProcessPoolExecutor(max_workers=num_workers) as executor:
             futures = []
             for task in tasks:
                 future = executor.submit(run_task, task)

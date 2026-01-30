@@ -1,0 +1,44 @@
+seed: 42
+
+paths:
+  cache_dir: ./outputs/cache
+  results_dir: ./outputs/results
+  figures_dir: ./outputs/figures
+  checkpoints_dir: ./outputs/checkpoints
+  hf_cache_dir: ~/.cache/huggingface
+
+logging:
+  level: INFO
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  save_to_file: true
+
+inference:
+  batch_size: 32  # Increased from 4 - A100 80GB can handle this easily
+  checkpoint_interval: 500
+  use_cache: true
+
+generation:
+  max_new_tokens: 128  # Reduced from 256 - MCQ answers don't need long outputs
+  do_sample: false
+  temperature: 0.0
+
+models:
+  medgemma_4b:
+    model_id: google/medgemma-4b-it
+    quantization: null
+    max_new_tokens: 128
+
+  medgemma_27b:
+    model_id: google/medgemma-27b-text-it
+    quantization: 4bit
+    max_new_tokens: 128
+
+datasets:
+  medmcqa:
+    hf_id: openlifescienceai/medmcqa
+    split: validation
+
+  pubmedqa:
+    hf_id: qiaojin/PubMedQA
+    subset: pqa_labeled
+    split: train

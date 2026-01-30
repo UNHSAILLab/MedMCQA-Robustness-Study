@@ -1,0 +1,344 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage[margin=1in]{geometry}
+\usepackage{natbib}
+\usepackage{xcolor}
+
+% For placeholder notes
+\newcommand{\todo}[1]{\textcolor{red}{[TODO: #1]}}
+\newcommand{\placeholder}[1]{\textcolor{blue}{[#1]}}
+
+\title{When Chain-of-Thought Backfires: Evaluating Prompt Sensitivity in Medical Language Models}
+
+\author{
+  Author Name\\
+  Institution\\
+  \texttt{email@institution.edu}
+}
+
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Large language models are increasingly deployed in medical settings, yet their sensitivity to prompt formatting remains poorly characterized. We evaluate MedGemma, Google's medical-specialist language model, on two benchmark datasets: MedMCQA (4,183 questions) and PubMedQA (1,000 questions). Our experiments reveal several concerning findings. Chain-of-thought prompting decreases accuracy by 5.7\% compared to direct answering, contradicting the assumption that reasoning traces improve performance. Few-shot examples degrade performance by 11.9\%, with position bias increasing from 0.14 to 0.47. Shuffling answer options causes the model to change its prediction 59.1\% of the time, with accuracy dropping by up to 27.4 percentage points. Truncating context to 50\% causes accuracy to plummet from 45.0\% to 14.1\%---worse than providing no context at all (36.7\%). These results demonstrate that prompt engineering techniques validated on general-purpose models do not transfer to domain-specific medical LLMs, and that deployment requires rigorous empirical validation rather than assumed best practices.
+\end{abstract}
+
+\section{Introduction}
+
+Medical question answering is hard. Unlike general knowledge tasks where multiple reasonable answers might exist, clinical decisions often hinge on precise distinctions between similar-sounding options. A model that performs well on average may still fail catastrophically on the specific cases where accuracy matters most.
+
+Large language models have shown impressive performance on medical licensing exams \citep{singhal2023large, nori2023capabilities}. This has fueled enthusiasm for deploying LLMs in clinical decision support. But benchmark accuracy tells only part of the story. How these models respond to variations in prompt format, question ordering, and context presentation remains unclear.
+
+We focus on MedGemma \citep{medgemma2024}, Google's medical-specialist LLM built on the Gemma architecture. The model was specifically trained on medical literature and clinical data, making it a natural candidate for healthcare applications. Our goal is not to benchmark raw accuracy, but to stress-test the model's robustness to common prompt engineering variations.
+
+\subsection{The Prompt Engineering Assumption}
+
+A widely held belief in the LLM community is that certain prompting strategies reliably improve performance. Chain-of-thought prompting, where models are instructed to reason step-by-step before answering, has shown gains across mathematical and reasoning tasks \citep{wei2022chain}. Few-shot learning, where examples are provided in-context, helps models understand desired output formats \citep{brown2020language}. These techniques are often treated as "best practices" that should transfer across domains.
+
+But should they? Domain-specific models may have learned different response patterns during training. A model trained extensively on medical text might already internalize structured reasoning, making explicit chain-of-thought prompts redundant or even harmful. Similarly, few-shot examples from one medical specialty might mislead the model when applied to another.
+
+\subsection{Contributions}
+
+We present a systematic evaluation of MedGemma's sensitivity to prompt variations across three primary experimental conditions:
+
+\begin{enumerate}
+    \item \textbf{Prompt ablation}: Comparing zero-shot, chain-of-thought, and few-shot prompting strategies on MedMCQA (4,183 questions).
+    \item \textbf{Option order sensitivity}: Testing whether shuffling answer choices affects model predictions, measuring flip rates and accuracy degradation across four perturbation types.
+    \item \textbf{Evidence conditioning}: Evaluating how context length and content type influence accuracy on PubMedQA (1,000 questions), including truncation and section-specific conditions.
+\end{enumerate}
+
+Our findings challenge conventional assumptions about prompt engineering in medical AI. We release our evaluation framework and results to support further research on LLM robustness.
+
+\section{Related Work}
+
+\subsection{Medical Language Models}
+
+The application of large language models to medicine has accelerated rapidly. GPT-4 achieved accuracy rates of 93.2\%, 95.0\%, and 92.0\% on USMLE Steps 1, 2CK, and 3 respectively, exceeding the passing threshold by over 20 points \citep{nori2023capabilities}. Med-PaLM was the first AI system to surpass the 60\% passing mark on USMLE-style questions, and Med-PaLM 2 subsequently achieved 86.5\% on MedQA \citep{singhal2023large, singhal2023medpalm2}. These results have fueled enthusiasm for deploying LLMs in clinical decision support.
+
+MedGemma, introduced at Google I/O 2025, represents the latest generation of medical-specialist models \citep{medgemma2024}. Built on the Gemma architecture and trained on medical literature and clinical data, MedGemma-27B achieves 87.7\% on MedQA, within 3 points of larger models like DeepSeek R1 but at approximately one-tenth the inference cost. However, Google emphasizes that MedGemma is not intended for direct clinical use without further validation---a caveat our results strongly support.
+
+Despite impressive benchmark numbers, concerns persist about real-world reliability. Benchmark performance may not capture the model's behavior under realistic deployment conditions where prompts vary, context is incomplete, and question formatting differs from training distributions.
+
+\subsection{Prompt Sensitivity and Robustness}
+
+The fragility of LLM predictions to prompt variations is well-documented in general domains. \citet{lu2022fantastically} demonstrated that few-shot example ordering significantly affects performance. The ProSA framework introduced PromptSensiScore to quantify this sensitivity, finding that performance can swing by up to 45\% depending on prompt formulation \citep{prosa2024}. Larger models generally exhibit enhanced robustness, but even state-of-the-art systems remain vulnerable.
+
+\subsection{Position Bias in Multiple-Choice Questions}
+
+\citet{zheng2024llm} showed that modern LLMs are vulnerable to option position changes due to inherent ``selection bias''---they prefer specific option IDs (like ``Option A'') regardless of content. In their analysis of 20 LLMs across three benchmarks, llama-30B selected options A/B/C/D with frequencies of 34.6\%/27.3\%/22.3\%/15.8\% respectively, despite balanced ground truth distributions. This bias stems from token-level preferences where models assign more probabilistic mass to certain option ID tokens. Their proposed PriDe debiasing method separates prior bias from predictions, but requires additional inference overhead.
+
+\subsection{Chain-of-Thought: When Reasoning Hurts}
+
+Chain-of-thought (CoT) prompting has become a standard technique for improving LLM reasoning \citep{wei2022chain}. However, recent work challenges its universal benefit. \citet{sprague2024mind} identified tasks where CoT reduces performance by up to 36.3\% absolute accuracy, drawing parallels to cognitive psychology research on when deliberation hurts human performance. The Wharton ``Decreasing Value of CoT'' report found that while CoT generally provides small average gains for non-reasoning models, it introduces more variability and can trigger errors on questions the model would otherwise answer correctly \citep{meincke2024cot}. For dedicated reasoning models, explicit CoT prompting appears to provide negligible additional benefit while substantially increasing processing time.
+
+In medical domains specifically, \citet{omar2024cotmedical} found that complex prompting techniques do not significantly enhance performance compared to simpler approaches, suggesting that dataset characteristics and model architecture have greater impact than prompt engineering.
+
+\subsection{Context and Retrieval-Augmented Generation}
+
+Retrieval-augmented generation (RAG) systems face particular challenges with incomplete or misleading context. \citet{barnett2024rag} identified seven recurrent failure points in operational RAG systems, including retrieval errors, context consolidation failures, and incomplete answers. The ``lost-in-the-middle'' phenomenon shows that key information position within context significantly impacts response quality \citep{liu2024lost}. Most relevant to our findings, RAG-Bench demonstrated that relevant-but-incomplete retrieved context can actively mislead models, sometimes performing worse than no retrieval at all \citep{fang2024ragbench}. Our evidence conditioning experiments provide direct evidence of this phenomenon in medical question answering.
+
+\section{Methods}
+
+\subsection{Models}
+
+We evaluate two variants of MedGemma:
+\begin{itemize}
+    \item \textbf{MedGemma-4B}: The 4-billion parameter instruction-tuned model, run at full precision.
+    \item \textbf{MedGemma-27B}: The 27-billion parameter model, quantized to 4-bit precision to fit within GPU memory constraints.
+\end{itemize}
+
+\subsection{Datasets}
+
+\paragraph{MedMCQA} A large-scale multiple-choice dataset derived from Indian medical entrance examinations \citep{pal2022medmcqa}. The dataset covers 21 medical subjects with over 194,000 questions. We use the validation split containing 4,183 questions for our experiments.
+
+\paragraph{PubMedQA} A biomedical question answering dataset where questions are derived from PubMed article titles and must be answered using the abstract as context \citep{jin2019pubmedqa}. We use the 1,000-question labeled subset where ground truth answers are available.
+
+\subsection{Experimental Conditions}
+
+\subsubsection{Experiment 1: Prompt Ablation}
+
+We test five prompting strategies on MedMCQA:
+
+\begin{itemize}
+    \item \textbf{Zero-shot direct}: The model is given the question and asked to respond with only the answer letter.
+    \item \textbf{Zero-shot CoT}: The model is instructed to "think step by step" before providing an answer.
+    \item \textbf{Few-shot direct (k=3)}: Three example questions with correct answers are provided before the test question.
+    \item \textbf{Few-shot CoT (k=3)}: Three examples with reasoning traces are provided.
+    \item \textbf{Answer-only}: A minimal prompt requesting just the letter with no additional instructions.
+\end{itemize}
+
+\subsubsection{Experiment 2: Option Order Sensitivity}
+
+Multiple-choice models may learn spurious correlations with answer position rather than content. We test this by applying five transformations to each question:
+
+\begin{itemize}
+    \item \textbf{Original}: Options in their natural order.
+    \item \textbf{Random shuffle}: Options randomly permuted.
+    \item \textbf{Rotate-1}: Options cyclically shifted by one position.
+    \item \textbf{Rotate-2}: Options cyclically shifted by two positions.
+    \item \textbf{Distractor swap}: Incorrect options swapped while correct answer position preserved.
+\end{itemize}
+
+A robust model should maintain consistent accuracy across these conditions.
+
+\subsubsection{Experiment 3: Evidence Conditioning}
+
+Using PubMedQA, we vary the context provided to the model:
+
+\begin{itemize}
+    \item \textbf{Question only}: No context provided.
+    \item \textbf{Full context}: Complete abstract included.
+    \item \textbf{Truncated 50\%}: First half of abstract only.
+    \item \textbf{Truncated 25\%}: First quarter of abstract only.
+    \item \textbf{Background only}: Only background/introduction sentences.
+    \item \textbf{Results only}: Only results/conclusion sentences.
+\end{itemize}
+
+\subsection{Evaluation Metrics}
+
+\paragraph{Accuracy} Proportion of questions answered correctly after parsing the model's response.
+
+\paragraph{Position Bias Score} Absolute difference between predicted answer distribution and ground truth distribution across positions A-D.
+
+\paragraph{Consistency Rate} For option-order experiments, the proportion of questions where the model's prediction (mapped back to original positions) remains unchanged across perturbations.
+
+\paragraph{Confidence Intervals} We report 95\% bootstrap confidence intervals for all accuracy measurements.
+
+\section{Results}
+
+\subsection{Prompt Ablation}
+
+Table~\ref{tab:prompt_ablation} shows accuracy across prompting strategies for MedGemma-4B on the full MedMCQA validation set (n=4,183).
+
+\begin{table}[h]
+\centering
+\caption{Prompt ablation results on MedMCQA (n=4,183)}
+\label{tab:prompt_ablation}
+\begin{tabular}{lccc}
+\toprule
+\textbf{Condition} & \textbf{Accuracy} & \textbf{95\% CI} & \textbf{Position Bias} \\
+\midrule
+Zero-shot direct & 47.6\% & [46.1\%, 49.1\%] & 0.137 \\
+Zero-shot CoT & 41.9\% & [40.4\%, 43.3\%] & 0.275 \\
+Few-shot direct (k=3) & 35.7\% & [34.3\%, 37.0\%] & 0.472 \\
+Few-shot CoT (k=3) & 40.8\% & [39.4\%, 42.3\%] & 0.413 \\
+Answer-only & 43.0\% & [41.5\%, 44.6\%] & 0.096 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The results contradict standard prompt engineering intuitions. Zero-shot direct prompting achieves the highest accuracy at 47.6\%. Chain-of-thought prompting reduces accuracy by 5.7 percentage points (CoT gain = $-$5.7\%). Few-shot examples hurt even more, reducing accuracy by 11.9 points in the direct condition (few-shot gain = $-$11.9\%).
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.9\textwidth]{figures/fig1_prompt_ablation.pdf}
+\caption{MedGemma-4B accuracy across prompt strategies on MedMCQA. Error bars show 95\% confidence intervals. Zero-shot direct prompting outperforms all other strategies, including chain-of-thought and few-shot variants.}
+\label{fig:prompt_ablation}
+\end{figure}
+
+\subsection{Position Bias}
+
+The model shows a consistent preference for option A, and this bias intensifies dramatically with few-shot prompting. In the zero-shot direct condition, the position bias score is 0.137. With few-shot direct prompting, the bias score increases to 0.472, indicating the model predicts option A far more frequently than its actual occurrence in correct answers.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.95\textwidth]{figures/fig2_position_bias.pdf}
+\caption{Distribution of predicted answers vs. actual correct answers. Left: Zero-shot direct shows moderate bias toward A (predicted 45.9\% vs. actual 32.2\%). Right: Few-shot direct shows severe bias toward A.}
+\label{fig:position_bias}
+\end{figure}
+
+\subsection{Option Order Sensitivity}
+
+Table~\ref{tab:option_order} presents results when answer options are permuted. The model exhibits extreme sensitivity to option ordering, with a mean flip rate of 59.1\%---meaning the model changes its answer more often than not when options are shuffled.
+
+\begin{table}[h]
+\centering
+\caption{Option order sensitivity results on MedMCQA (n=4,183)}
+\label{tab:option_order}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Perturbation} & \textbf{Accuracy} & \textbf{Accuracy Drop} \\
+\midrule
+Original & 47.6\% & --- \\
+Random shuffle & 29.2\% & $-$18.4\% \\
+Rotate-1 & 20.2\% & $-$27.4\% \\
+Rotate-2 & 24.3\% & $-$23.3\% \\
+Distractor swap & 38.7\% & $-$8.9\% \\
+\midrule
+\textbf{Mean drop} & --- & $-$18.4\% \\
+\textbf{Max drop} & --- & $-$27.4\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The most striking finding is the 59.1\% mean flip rate: when options are reordered, the model selects a different answer (mapped back to original option content) more than half the time. The maximum flip rate reaches 72.9\% for certain perturbation types. This indicates that MedGemma's predictions are driven substantially by option position rather than semantic content.
+
+Rotation perturbations cause the largest accuracy drops (up to 27.4\%), while distractor swaps---which preserve the correct answer's position---show the smallest impact ($-$8.9\%). This pattern confirms that position, not distractor content, drives the model's fragility.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.9\textwidth]{figures/fig4_option_order.pdf}
+\caption{Model predictions change 59.1\% of the time when answer options are shuffled. Rotation perturbations cause the largest accuracy drops, confirming strong position bias.}
+\label{fig:option_order}
+\end{figure}
+
+\subsection{Evidence Conditioning}
+
+On PubMedQA (n=1,000), context substantially affects performance (Table~\ref{tab:evidence}).
+
+\begin{table}[h]
+\centering
+\caption{Evidence conditioning results on PubMedQA (n=1,000)}
+\label{tab:evidence}
+\begin{tabular}{lc}
+\toprule
+\textbf{Condition} & \textbf{Accuracy} \\
+\midrule
+Question only & 36.7\% \\
+Full context & 45.0\% \\
+Truncated 50\% & 14.1\% \\
+Truncated 25\% & 13.1\% \\
+Background only & 26.5\% \\
+Results only & 41.7\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Full context improves accuracy by 8.3 percentage points over question-only (45.0\% vs. 36.7\%). But aggressive truncation is catastrophic: truncating to 25\% of the abstract drops accuracy to just 13.1\%, far below the question-only baseline of 36.7\%. This suggests the model is actively misled by incomplete information rather than simply lacking context.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.9\textwidth]{figures/fig3_evidence_conditioning.pdf}
+\caption{MedGemma-4B accuracy with varying context on PubMedQA. Truncated context performs worse than no context, indicating the model is misled by partial information.}
+\label{fig:evidence}
+\end{figure}
+
+\section{Discussion}
+
+\subsection{Why Does Chain-of-Thought Hurt?}
+
+The 5.7\% accuracy drop from chain-of-thought prompting aligns with recent findings that CoT can reduce performance on certain task types \citep{sprague2024mind}. Medical MCQs may fall into this category for a specialist model: MedGemma was trained extensively on medical text and may have already internalized domain reasoning patterns. Forcing explicit reasoning may override these learned patterns with less reliable step-by-step logic.
+
+\paragraph{Case-level error analysis.} To understand this phenomenon, we analyzed individual questions where CoT changed the model's answer. Out of 4,183 questions, CoT prompting hurt performance on 750 cases (direct correct, CoT wrong) while helping on only 512 cases (direct wrong, CoT correct)---a net loss of 238 questions. Similarly, few-shot prompting hurt 979 cases while helping only 481 cases---a net loss of 498 questions.
+
+Examining the 750 cases where CoT hurt performance, we identified several failure patterns:
+
+\begin{itemize}
+    \item \textbf{Verbose reasoning (90.7\%)}: In 680 cases, CoT responses exceeded 500 characters. Longer reasoning chains appear to create more opportunities for errors to compound.
+    \item \textbf{Self-contradiction (25.6\%)}: In 192 cases, the reasoning contained hedge words like ``however'' or ``but'' that introduced conflicting logic.
+    \item \textbf{Wrong conclusion (11.1\%)}: In 83 cases, the model explicitly stated ``therefore'' before arriving at an incorrect answer---sound-seeming reasoning leading to wrong conclusions.
+\end{itemize}
+
+A typical failure pattern: the model correctly identifies the relevant medical concept in its reasoning, considers multiple options, then talks itself into the wrong answer. For example, in one organophosphate poisoning question, the CoT response correctly identified the condition and the role of atropine, but ultimately selected neostigmine (which would worsen the condition) after extended deliberation.
+
+This finding has practical implications. The Wharton report on CoT prompting found that for dedicated reasoning models, explicit CoT provides negligible benefit while substantially increasing processing time and cost \citep{meincke2024cot}. Our results suggest that for domain-specialized models like MedGemma, CoT may actively harm performance, not merely fail to help.
+
+\subsection{The Few-Shot Paradox}
+
+Few-shot examples are typically selected to demonstrate the desired output format. But in medical contexts, examples from one specialty may be misleading for another. Our few-shot examples were sampled from the same dataset but different medical subjects. A cardiology example may prime the model with cardiovascular concepts that are irrelevant or confusing for an ophthalmology question.
+
+The dramatic increase in position bias under few-shot conditions (from 0.137 to 0.472) suggests the model is learning spurious patterns from examples rather than useful response formats. With few-shot direct prompting, the model predicts option A for approximately 76\% of questions, despite A being the correct answer only about 32\% of the time.
+
+\subsection{Option Order: The 59\% Flip Rate Problem}
+
+Perhaps our most concerning finding is that MedGemma changes its answer 59.1\% of the time when answer options are shuffled. This exceeds what would be expected from random noise and indicates that option position substantially drives predictions. The maximum flip rate of 72.9\% for certain perturbations suggests that for nearly three-quarters of questions, the model's answer depends more on where options appear than on their content.
+
+This finding aligns with \citet{zheng2024llm}'s observation that LLMs exhibit inherent ``selection bias'' toward specific option IDs. However, the magnitude we observe in MedGemma (59.1\% flip rate, up to 27.4\% accuracy drop) exceeds typical findings, suggesting that medical-specialist training may not mitigate---and could potentially exacerbate---position bias.
+
+For clinical applications, this fragility is unacceptable. A diagnostic support system that changes its recommendation based on how options are ordered provides no reliable signal to clinicians.
+
+\subsection{Context Truncation: Partial Information Actively Misleads}
+
+The evidence conditioning results highlight a dangerous failure mode. Truncating context to 50\% yields accuracy of just 14.1\%, while providing no context at all achieves 36.7\%. This 22.6 percentage point gap indicates that partial context actively misleads the model---it would be better to show nothing than to show half the abstract.
+
+This finding has direct implications for retrieval-augmented generation (RAG) systems in medical applications. RAG-Bench similarly found that relevant-but-incomplete retrieved context can harm performance \citep{fang2024ragbench}. Our results provide concrete evidence: in biomedical question answering, incomplete context doesn't merely fail to help---it causes the model to perform worse than with no retrieval at all.
+
+Interestingly, providing only the results section of abstracts (41.7\%) nearly matches full context performance (45.0\%), while background-only context achieves just 26.5\%. This suggests the model benefits most from conclusions and findings rather than methodological background, which has implications for how medical RAG systems should prioritize retrieved content.
+
+\subsection{Base vs. Instruction-Tuned Models}
+
+To assess whether our findings generalize beyond MedGemma, we evaluated BioMistral-7B \citep{labrak2024biomistral}, a medical LLM created by continued pretraining of Mistral-7B on PubMed Central articles. Unlike MedGemma, BioMistral is a base model without instruction tuning.
+
+The results reveal even more extreme prompt sensitivity. On instruction-style prompts (zero-shot direct, CoT, few-shot), BioMistral achieves near-zero accuracy---it simply does not understand the task framing. However, on completion-style prompts (answer-only format), BioMistral achieves 38.6\% accuracy, approaching MedGemma's 43.0\% on the same format.
+
+This 38.6 percentage point gap between prompt formats for the same model underscores a critical deployment consideration: medical knowledge encoded in base models can be completely inaccessible if the prompt format doesn't match training expectations. Instruction tuning is not merely a convenience---it determines whether a model's medical knowledge can be accessed at all.
+
+\subsection{Limitations}
+
+\begin{enumerate}
+    \item \textbf{Limited model coverage}: We evaluate MedGemma-4B extensively and BioMistral-7B on prompt ablation. The MedGemma-27B variant showed quantization-related response parsing issues. Evaluation of additional models (Med-PaLM, Meditron) would strengthen generalizability claims.
+    \item \textbf{Dataset specificity}: MedMCQA and PubMedQA represent specific medical question formats (multiple choice and yes/no/maybe). Results may not generalize to clinical notes, diagnostic reasoning, or conversational medical queries.
+    \item \textbf{English only}: Both datasets are in English. Medical terminology and reasoning patterns may differ across languages.
+    \item \textbf{Static evaluation}: We evaluate single-turn question answering. Interactive dialogue or multi-turn reasoning may yield different results.
+\end{enumerate}
+
+\section{Conclusion}
+
+Our evaluation of MedGemma-4B on 4,183 MedMCQA and 1,000 PubMedQA questions reveals that standard prompt engineering techniques do not reliably improve, and may actively harm, performance on medical question answering:
+
+\begin{itemize}
+    \item \textbf{Chain-of-thought hurts}: CoT prompting decreases accuracy by 5.7\% compared to zero-shot direct answering, while increasing position bias.
+    \item \textbf{Few-shot examples backfire}: Few-shot prompting decreases accuracy by 11.9\%, with position bias increasing from 0.14 to 0.47.
+    \item \textbf{Extreme option sensitivity}: Shuffling answer options causes the model to change its prediction 59.1\% of the time, with accuracy dropping by up to 27.4 percentage points.
+    \item \textbf{Partial context misleads}: Truncated context (50\%) achieves only 14.1\% accuracy, far below the 36.7\% achieved with no context at all.
+\end{itemize}
+
+These findings have significant implications for medical AI deployment. First, prompt engineering ``best practices'' derived from general-purpose models---chain-of-thought reasoning, few-shot examples, and retrieval augmentation---may not transfer to domain-specialist models and should be empirically validated for each deployment context. Second, the extreme sensitivity to option ordering (59.1\% flip rate) suggests that MedGemma's predictions on multiple-choice questions reflect position bias as much as medical knowledge, raising questions about what benchmark accuracy actually measures. Third, the failure mode where partial context performs worse than no context has direct implications for RAG-based medical AI systems: incomplete retrieval may be worse than no retrieval.
+
+For practitioners deploying medical LLMs, our results suggest that simpler is often better. Zero-shot direct prompting outperformed all other strategies we tested. Before adding complexity through CoT, few-shot examples, or retrieval augmentation, developers should verify that these techniques actually improve performance on their specific use case.
+
+\section*{Acknowledgments}
+
+We thank the MedGemma team at Google for releasing open model weights that enabled this evaluation. Experiments were conducted on NVIDIA A100 GPUs.
+
+\bibliographystyle{plainnat}
+\bibliography{references}
+
+\end{document}

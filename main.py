@@ -136,7 +136,7 @@ def main():
 
     parser.add_argument(
         '--model', '-m',
-        choices=['4b', '27b', '27b-8bit'],
+        choices=['4b', '27b', '27b-4bit', '27b-8bit'],
         default='4b',
         help="Model variant (default: 4b)"
     )
