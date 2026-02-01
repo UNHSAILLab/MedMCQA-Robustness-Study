@@ -201,11 +201,11 @@ Based on our findings:
 If you use this code or findings in your research, please cite:
 
 ```bibtex
-@article{sadanandan2024cot,
+@article{sadanandan2025cot,
   title={When Chain-of-Thought Backfires: Evaluating Prompt Sensitivity in Medical Language Models},
   author={Sadanandan, Binesh},
   journal={arXiv preprint},
-  year={2024},
+  year={2025},
   note={University of New Haven}
 }
 ```
