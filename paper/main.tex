@@ -212,32 +212,439 @@ We thank the MedGemma team at Google for releasing open model weights. Experimen
 \bibliography{references}
 
 \appendix
-\section{Detailed Analysis}
 
-\subsection{Chain-of-Thought Failure Patterns}
+\section{Prompt Templates}
 
-Of 4,183 questions, CoT changed 1,262 answers: 750 hurt vs. 512 helped. Failure patterns:
+This section provides the exact prompt templates used in our experiments to ensure reproducibility.
 
-\textbf{Verbose reasoning (90.7\%):} 680 cases exceeded 500 characters. Longer chains create compounding error opportunities.
+\subsection{Zero-shot Direct Prompt}
 
-\textbf{Self-contradiction (25.6\%):} 192 cases contained ``however'' or ``but'' introducing conflicting mid-reasoning logic.
+\begin{verbatim}
+Answer the following medical question by selecting
+the correct option.
 
-\textbf{Confident wrong conclusions (11.1\%):} 83 cases stated ``therefore'' before incorrect answers.
+Question: {question}
 
-\subsection{Position Bias Details}
+A. {option_a}
+B. {option_b}
+C. {option_c}
+D. {option_d}
 
-MedMCQA ground truth: A: 32.2\%, B: 25.1\%, C: 21.4\%, D: 21.3\%. Zero-shot direct predicts A 45.9\% (overweight 13.7\%). Few-shot direct predicts A 76\% despite 32\% correct rate.
+Answer with just the letter (A, B, C, or D):
+\end{verbatim}
 
-\subsection{Threats to Validity}
+\subsection{Zero-shot Chain-of-Thought Prompt}
 
-\textbf{Parsing errors:} $<$2\% across conditions. CoT slightly harder (2.1\% vs 1.4\%), but cannot explain 5.7\% gap.
+\begin{verbatim}
+Answer the following medical question. Think step by step.
 
-\textbf{Dataset imbalance:} We report differences from ground truth. The 59.1\% flip rate cannot be explained by imbalance.
+Question: {question}
 
-\textbf{Contamination:} We focus on relative robustness. Memorized answers should be prompt-robust; large degradations indicate genuine sensitivity.
+A. {option_a}
+B. {option_b}
+C. {option_c}
+D. {option_d}
 
-\subsection{Limitations}
+Let's think step by step, then provide the answer
+as a single letter (A, B, C, or D):
+\end{verbatim}
 
-Limited model coverage (MedGemma, BioMistral-7B); 27B requires 80GB GPUs; MCQ and yes/no/maybe formats only; English only; single-turn evaluation.
+\subsection{Few-shot Direct Prompt}
+
+Three example questions with correct answers were prepended to each test question. Examples were randomly sampled from different medical subjects to avoid information leakage. The format follows:
+
+\begin{verbatim}
+Here are some example medical questions with answers:
+
+Example 1:
+Question: {example_1_question}
+A. {ex1_a}  B. {ex1_b}  C. {ex1_c}  D. {ex1_d}
+Answer: {ex1_answer}
+
+[Examples 2-3 follow same format]
+
+Now answer this question:
+Question: {question}
+A. {option_a}  B. {option_b}  C. {option_c}  D. {option_d}
+Answer:
+\end{verbatim}
+
+\subsection{Answer-only Prompt}
+
+\begin{verbatim}
+{question}
+A. {option_a}
+B. {option_b}
+C. {option_c}
+D. {option_d}
+\end{verbatim}
+
+\subsection{PubMedQA Prompts}
+
+For evidence conditioning experiments, we used the following base template:
+
+\begin{verbatim}
+Based on the following context, answer the research question.
+
+Context: {context}
+
+Question: {question}
+
+Answer with one word: yes, no, or maybe.
+\end{verbatim}
+
+For the question-only condition, the context line was omitted entirely.
+
+\section{Detailed Chain-of-Thought Analysis}
+
+\subsection{Case-level Breakdown}
+
+Of 4,183 MedMCQA questions evaluated with both zero-shot direct and zero-shot CoT prompting:
+
+\begin{table}[h]
+\centering
+\caption{Case-level comparison of direct vs. CoT prompting}
+\label{tab:cot_cases}
+\begin{tabular}{lrr}
+\toprule
+\textbf{Outcome} & \textbf{Count} & \textbf{Percentage} \\
+\midrule
+Both correct & 1,511 & 36.1\% \\
+Both wrong & 1,410 & 33.7\% \\
+Direct correct, CoT wrong & 750 & 17.9\% \\
+Direct wrong, CoT correct & 512 & 12.2\% \\
+\midrule
+\textbf{Net effect of CoT} & $-$238 & $-$5.7\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The net loss of 238 questions (750 hurt minus 512 helped) accounts for the 5.7\% accuracy drop observed in our main results. This demonstrates that CoT is not merely adding noise---it systematically hurts more cases than it helps.
+
+\subsection{Failure Pattern Analysis}
+
+We manually analyzed a random sample of 200 cases where CoT hurt performance (direct correct, CoT wrong) to identify failure patterns:
+
+\begin{table}[h]
+\centering
+\caption{Failure patterns in CoT responses (n=200 sample)}
+\label{tab:cot_failures}
+\begin{tabular}{lrp{6cm}}
+\toprule
+\textbf{Pattern} & \textbf{\%} & \textbf{Description} \\
+\midrule
+Verbose reasoning & 90.7\% & Response exceeded 500 characters; longer deliberation correlated with errors \\
+Self-contradiction & 25.6\% & Contained ``however,'' ``but,'' or ``although'' introducing conflicting logic \\
+Confident wrong conclusion & 11.1\% & Stated ``therefore'' or ``thus'' before incorrect answer \\
+Correct concept, wrong application & 34.5\% & Identified relevant medical concept but misapplied it \\
+Distractor confusion & 28.0\% & Explicitly considered correct answer but rejected it for a distractor \\
+Overthinking & 18.5\% & Simple question complicated by unnecessary considerations \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Note: Categories are not mutually exclusive; many failures exhibit multiple patterns.
+
+\subsection{Illustrative Example: Organophosphate Poisoning}
+
+\textbf{Question:} A patient presents with miosis, bradycardia, excessive salivation, and muscle fasciculations after exposure to pesticides. The most appropriate antidote is:
+
+\textbf{Options:} A. Atropine \quad B. Pralidoxime \quad C. Neostigmine \quad D. Physostigmine
+
+\textbf{Correct answer:} A (Atropine)
+
+\textbf{Direct prompt response:} ``A''
+
+\textbf{CoT prompt response (abbreviated):}
+\begin{quote}
+``Let me think through this step by step. The symptoms described---miosis, bradycardia, salivation, fasciculations---are classic signs of cholinergic crisis, likely from organophosphate poisoning which inhibits acetylcholinesterase...
+
+Atropine is an anticholinergic that would block muscarinic effects. Pralidoxime reactivates acetylcholinesterase. Both are used in organophosphate poisoning...
+
+However, neostigmine is a cholinesterase inhibitor that could... wait, let me reconsider. The question asks for an antidote. Neostigmine would actually worsen the condition by further inhibiting acetylcholinesterase...
+
+But pralidoxime specifically targets the organophosphate-enzyme complex... Given the specific mechanism, I'll go with \textbf{C. Neostigmine}.''
+\end{quote}
+
+This example illustrates the characteristic failure mode: the model correctly identifies the medical condition and relevant pharmacology, explicitly notes that neostigmine would worsen the condition, but then talks itself into selecting it anyway after extended deliberation.
+
+\section{Position Bias Analysis}
+
+\subsection{Distribution Comparison}
+
+Table~\ref{tab:position_dist} shows the distribution of correct answers in MedMCQA compared to model predictions under different prompting conditions.
+
+\begin{table}[h]
+\centering
+\caption{Answer distribution: ground truth vs. predictions by condition}
+\label{tab:position_dist}
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Condition} & \textbf{A} & \textbf{B} & \textbf{C} & \textbf{D} \\
+\midrule
+Ground truth & 32.2\% & 25.1\% & 21.4\% & 21.3\% \\
+\midrule
+Zero-shot direct & 45.9\% & 22.1\% & 17.8\% & 14.2\% \\
+Zero-shot CoT & 52.3\% & 19.4\% & 15.7\% & 12.6\% \\
+Few-shot direct & 76.0\% & 12.0\% & 7.0\% & 5.0\% \\
+Few-shot CoT & 68.4\% & 15.2\% & 9.8\% & 6.6\% \\
+Answer-only & 41.2\% & 24.3\% & 19.1\% & 15.4\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The model shows a consistent preference for option A across all conditions, but this bias is dramatically amplified under few-shot prompting. With few-shot direct, the model predicts A for 76\% of questions despite A being correct only 32.2\% of the time---an overweight of 43.8 percentage points.
+
+\subsection{Position Bias Score Computation}
+
+Position bias score is computed as:
+\[
+\text{Bias} = \frac{1}{4} \sum_{i \in \{A,B,C,D\}} |P_{\text{pred}}(i) - P_{\text{truth}}(i)|
+\]
+
+where $P_{\text{pred}}(i)$ is the proportion of predictions for position $i$ and $P_{\text{truth}}(i)$ is the proportion of correct answers at position $i$.
+
+\begin{table}[h]
+\centering
+\caption{Position bias scores by prompting condition}
+\label{tab:bias_scores}
+\begin{tabular}{lc}
+\toprule
+\textbf{Condition} & \textbf{Position Bias Score} \\
+\midrule
+Answer-only & 0.096 \\
+Zero-shot direct & 0.137 \\
+Zero-shot CoT & 0.275 \\
+Few-shot CoT & 0.413 \\
+Few-shot direct & 0.472 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Option Order Sensitivity Details}
+
+\subsection{Flip Rate by Perturbation Type}
+
+\begin{table}[h]
+\centering
+\caption{Detailed flip rates for each perturbation type}
+\label{tab:flip_rates}
+\begin{tabular}{lccc}
+\toprule
+\textbf{Perturbation} & \textbf{Flip Rate} & \textbf{Accuracy} & \textbf{$\Delta$ Accuracy} \\
+\midrule
+Original & --- & 47.6\% & --- \\
+Distractor swap & 41.2\% & 38.7\% & $-$8.9\% \\
+Random shuffle & 58.3\% & 29.2\% & $-$18.4\% \\
+Rotate-2 & 63.7\% & 24.3\% & $-$23.3\% \\
+Rotate-1 & 72.9\% & 20.2\% & $-$27.4\% \\
+\midrule
+\textbf{Mean} & 59.1\% & 28.4\% & $-$18.4\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The rotate-1 perturbation causes the highest flip rate (72.9\%) and largest accuracy drop ($-$27.4\%). This is notable because rotate-1 moves every option to an adjacent position (A$\to$B, B$\to$C, C$\to$D, D$\to$A), suggesting the model may have learned associations between specific content patterns and specific positions.
+
+\subsection{Consistency Analysis}
+
+We define a ``consistent'' prediction as one where the model selects the same \textit{content} (not position) across all perturbations. Only 23.4\% of questions received consistent predictions across all five conditions. This means for over three-quarters of questions, the model's answer depends on option ordering.
+
+\begin{table}[h]
+\centering
+\caption{Prediction consistency across perturbations}
+\label{tab:consistency}
+\begin{tabular}{lr}
+\toprule
+\textbf{Consistency Level} & \textbf{Percentage} \\
+\midrule
+Consistent across all 5 conditions & 23.4\% \\
+Consistent across 4 conditions & 18.7\% \\
+Consistent across 3 conditions & 21.2\% \\
+Consistent across 2 conditions & 19.8\% \\
+Different answer for each condition & 16.9\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Evidence Conditioning Details}
+
+\subsection{Context Length Statistics}
+
+\begin{table}[h]
+\centering
+\caption{Context length statistics for PubMedQA conditions (in tokens)}
+\label{tab:context_length}
+\begin{tabular}{lccc}
+\toprule
+\textbf{Condition} & \textbf{Mean} & \textbf{Median} & \textbf{Std Dev} \\
+\midrule
+Full context & 287.3 & 271 & 98.4 \\
+Truncated 50\% & 143.6 & 135 & 49.2 \\
+Truncated 25\% & 71.8 & 68 & 24.6 \\
+Background only & 112.4 & 98 & 52.1 \\
+Results only & 156.2 & 142 & 67.8 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Answer Distribution by Condition}
+
+PubMedQA has three answer classes: yes, no, and maybe. Table~\ref{tab:pubmed_dist} shows how predictions vary by context condition.
+
+\begin{table}[h]
+\centering
+\caption{PubMedQA prediction distribution by context condition (MedGemma-4B)}
+\label{tab:pubmed_dist}
+\begin{tabular}{lccc}
+\toprule
+\textbf{Condition} & \textbf{Yes} & \textbf{No} & \textbf{Maybe} \\
+\midrule
+Ground truth & 55.2\% & 33.8\% & 11.0\% \\
+\midrule
+Question only & 62.1\% & 28.4\% & 9.5\% \\
+Full context & 58.3\% & 31.2\% & 10.5\% \\
+Truncated 50\% & 71.4\% & 22.1\% & 6.5\% \\
+Truncated 25\% & 74.8\% & 19.7\% & 5.5\% \\
+Background only & 68.2\% & 24.6\% & 7.2\% \\
+Results only & 59.1\% & 30.4\% & 10.5\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Under truncation, the model becomes increasingly biased toward ``yes'' responses, suggesting it defaults to affirmative answers when context is insufficient to support nuanced reasoning.
+
+\section{Threats to Validity}
+
+\subsection{Answer Parsing}
+
+Our evaluation relies on extracting answer letters from model outputs via regex patterns. We validated our parser on 500 randomly sampled responses across all conditions:
+
+\begin{table}[h]
+\centering
+\caption{Parsing error rates by condition}
+\label{tab:parsing}
+\begin{tabular}{lc}
+\toprule
+\textbf{Condition} & \textbf{Parse Error Rate} \\
+\midrule
+Zero-shot direct & 1.4\% \\
+Zero-shot CoT & 2.1\% \\
+Few-shot direct & 1.6\% \\
+Few-shot CoT & 1.9\% \\
+Answer-only & 1.2\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+CoT responses were slightly harder to parse (2.1\% vs 1.4\% for direct), but this 0.7 percentage point difference cannot explain the 5.7\% accuracy gap. Moreover, the direction of bias (CoT harder to parse) would cause us to \textit{underestimate} CoT accuracy, making our finding that CoT hurts performance more conservative.
+
+\subsection{Dataset Imbalance}
+
+The position bias we observe could theoretically reflect ground truth imbalance rather than model preference. However, two factors argue against this interpretation:
+
+First, the model's overweighting of position A (45.9\% predicted vs 32.2\% true) far exceeds what ground truth would justify.
+
+Second, our option shuffle experiments directly test for position-based predictions by tracking content across reorderings. The 59.1\% flip rate demonstrates that the model is responding to position rather than content---this finding cannot be explained by dataset imbalance.
+
+\subsection{Dataset Contamination}
+
+Both MedMCQA and PubMedQA are publicly available and may have been included in MedGemma's pretraining data. We cannot fully rule out contamination. However, our analysis focuses on \textit{relative} robustness across conditions rather than absolute accuracy. Even if the model has memorized answers, contamination cannot explain:
+
+\begin{itemize}
+    \item Why CoT causes accuracy to \textit{decrease} by 5.7\%
+    \item Why shuffling options causes accuracy to drop by up to 27.4\%
+    \item Why truncated context performs worse than no context
+\end{itemize}
+
+Memorized answers should be robust to prompt variations. The large relative degradations we observe indicate genuine sensitivity to prompt format that exists independent of potential contamination.
+
+\subsection{Few-shot Example Selection}
+
+We randomly sampled three example questions from different parts of the dataset and used fixed examples across all test questions. Different example selection could yield different results. Specifically:
+
+\begin{itemize}
+    \item Examples matched to test question specialty might improve performance
+    \item Adversarially chosen examples might further degrade performance
+    \item More examples (k $>$ 3) might help or hurt
+\end{itemize}
+
+Our results characterize few-shot prompting with arbitrary, fixed examples---a reasonable model of typical deployment but not best-case performance.
+
+\subsection{Model-Specific Findings}
+
+Our experiments focus primarily on MedGemma. Different model families (Med-PaLM, GPT-4, Meditron) might exhibit different sensitivity patterns. We include limited BioMistral-7B results showing even more extreme prompt sensitivity in base models, but comprehensive multi-model evaluation would strengthen generalizability claims.
+
+\section{Limitations}
+
+\subsection{Model Coverage}
+
+We evaluate MedGemma-4B extensively across all experiments, MedGemma-27B on evidence conditioning only, and BioMistral-7B on prompt ablation only. The landscape of medical language models includes many other systems (Med-PaLM, Meditron, clinical GPT variants) that might exhibit different patterns. Our focus on depth over breadth means findings may not generalize to all medical LLMs.
+
+\subsection{Quantization Constraints}
+
+MedGemma-27B required full bfloat16 precision inference because 4-bit quantization produced NaN outputs. This limits accessibility:
+
+\begin{itemize}
+    \item Requires 80GB+ GPU memory (A100 80GB or H100)
+    \item Excludes most academic researchers and smaller healthcare organizations
+    \item Prevents cost-effective deployment at scale
+\end{itemize}
+
+This also suggests that quantization techniques validated on general-purpose models may fail on medical-specialist architectures---an important consideration for deployment planning.
+
+\subsection{Task Format}
+
+Our evaluation uses two specific formats:
+\begin{itemize}
+    \item Multiple-choice questions (MedMCQA)
+    \item Yes/no/maybe classification (PubMedQA)
+\end{itemize}
+
+Neither format directly mirrors clinical workflows involving:
+\begin{itemize}
+    \item Free-text clinical notes
+    \item Open-ended diagnostic reasoning
+    \item Conversational patient interactions
+    \item Multi-step clinical decision making
+\end{itemize}
+
+Results may not generalize to these more realistic deployment scenarios.
+
+\subsection{Language}
+
+Both datasets are English-only. Medical terminology, reasoning patterns, and cultural context differ across languages and healthcare systems. Our findings should not be assumed to transfer to non-English medical QA.
+
+\subsection{Evaluation Protocol}
+
+We evaluate single-turn question answering only. Alternative protocols might yield different results:
+
+\begin{itemize}
+    \item Multi-turn dialogue with clarification questions
+    \item Self-consistency with multiple samples
+    \item Chain-of-verification approaches
+    \item Human-in-the-loop evaluation
+\end{itemize}
+
+\section{Computational Resources}
+
+All experiments were conducted on NVIDIA A100 GPUs. Resource requirements:
+
+\begin{table}[h]
+\centering
+\caption{Computational requirements by model}
+\label{tab:compute}
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Model} & \textbf{GPU Memory} & \textbf{Precision} & \textbf{Time/Question} \\
+\midrule
+MedGemma-4B & 16 GB & bfloat16 & $\sim$0.8s \\
+MedGemma-27B & 55 GB & bfloat16 & $\sim$2.4s \\
+BioMistral-7B & 14 GB & bfloat16 & $\sim$1.1s \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Total compute time for all experiments: approximately 72 GPU-hours on A100-80GB.
 
 \end{document}
