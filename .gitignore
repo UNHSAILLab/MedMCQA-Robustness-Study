@@ -38,8 +38,8 @@ env/
 
 # Project specific
 outputs/
+logs/
 *.log
-experiment.log
 
 # HuggingFace cache
 .cache/
@@ -48,5 +48,10 @@ experiment.log
 .DS_Store
 Thumbs.db
 
-
-./outputs/cacheoutputs/
+# LaTeX build files
+*.aux
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.synctex.gz
