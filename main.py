@@ -136,9 +136,9 @@ def main():
 
     parser.add_argument(
         '--model', '-m',
-        choices=['4b', '27b', '27b-4bit', '27b-8bit'],
+        choices=['4b', '27b', '27b-4bit', '27b-8bit', 'biomistral-7b'],
         default='4b',
-        help="Model variant (default: 4b)"
+        help="Model variant (default: 4b). Note: 27b requires ~55GB VRAM, use 27b (full precision) not 27b-4bit (has NaN issues)"
     )
 
     parser.add_argument(

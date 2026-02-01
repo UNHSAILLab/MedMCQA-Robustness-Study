@@ -1028,3 +1028,83 @@ Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
 2026-01-29 19:14:02,050 - src.experiments.exp1_prompt_ablation - INFO - Loaded 4183 MedMCQA items
 2026-01-29 19:14:02,050 - src.experiments.exp1_prompt_ablation - INFO - Running condition: zero_shot_direct
 2026-01-29 19:14:02,577 - src.experiments.base - INFO - Processing 4133 items (cache hits: 50)
+2026-01-29 23:33:27,152 - src.experiments.exp3_evidence_conditioning - INFO - Running condition: full_context
+2026-01-29 23:33:27,286 - src.experiments.base - INFO - Processing 950 items (cache hits: 50)
+2026-01-30 04:01:57,775 - src.experiments.exp3_evidence_conditioning - INFO - Running condition: truncated_50
+2026-01-30 04:01:57,941 - src.experiments.base - INFO - Processing 950 items (cache hits: 50)
+2026-01-30 08:23:28,029 - src.experiments.exp3_evidence_conditioning - INFO - Running condition: truncated_25
+2026-01-30 08:23:28,195 - src.experiments.base - INFO - Processing 950 items (cache hits: 50)
+2026-01-30 12:44:08,694 - src.experiments.exp3_evidence_conditioning - INFO - Running condition: background_only
+2026-01-30 12:44:08,845 - src.experiments.base - INFO - Processing 950 items (cache hits: 50)
+2026-01-30 14:09:53,131 - src.experiments.exp2_option_order - INFO - Running perturbation: random_shuffle
+2026-01-30 14:09:53,997 - src.experiments.base - INFO - Processing 3943 items (cache hits: 240)
+2026-01-30 14:30:19,742 - src.experiments.exp1_prompt_ablation - INFO - Running condition: zero_shot_cot
+2026-01-30 14:30:20,258 - src.experiments.base - INFO - Processing 4133 items (cache hits: 50)
+2026-01-30 17:05:46,445 - src.experiments.exp3_evidence_conditioning - INFO - Running condition: results_only
+2026-01-30 17:05:46,599 - src.experiments.base - INFO - Processing 929 items (cache hits: 71)
+2026-01-30 17:56:10,053 - src.experiments.exp4_self_consistency - INFO - MedMCQA with N=3 samples
+2026-01-30 21:25:06,291 - src.experiments.base - INFO - Results saved to outputs/results/exp3_evidence_conditioning_medgemma_27b_4bit_20260129_191356.json
+2026-01-30 21:25:06,291 - src.utils.checkpointing - INFO - Checkpoint cleared: ./outputs/checkpoints/exp3_evidence_conditioning_medgemma_27b_4bit_checkpoint.json
+2026-01-30 21:25:06,292 - scripts.run_experiment - INFO - Experiment completed. Results saved to: outputs/results/exp3_evidence_conditioning_medgemma_27b_4bit_20260129_191356.json
+2026-01-31 08:16:41,950 - src.experiments.exp2_option_order - INFO - Running perturbation: rotate_1
+2026-01-31 08:16:42,558 - src.experiments.base - INFO - Processing 3968 items (cache hits: 215)
+2026-01-31 09:45:27,867 - src.experiments.exp1_prompt_ablation - INFO - Running condition: few_shot_3_direct
+2026-01-31 09:45:28,431 - src.experiments.base - INFO - Processing 4133 items (cache hits: 50)
+2026-01-31 13:25:14,243 - scripts.run_experiment - INFO - Running experiment: evidence_conditioning
+2026-01-31 13:25:14,243 - scripts.run_experiment - INFO - Model: 27b
+2026-01-31 13:25:14,243 - src.models.medgemma - INFO - Loading google/medgemma-27b-text-it with quantization=None
+2026-01-31 13:25:15,758 - src.models.medgemma - INFO - Flash attention not available, using default attention
+2026-01-31 13:25:43,421 - accelerate.utils.modeling - INFO - We will use 90% of the memory on device 0 for storing the model, and 10% for the buffer to avoid OOM. You can set `max_memory` in to a higher value to use more memory (at your own risk).
+2026-01-31 13:25:52,282 - src.models.medgemma - INFO - Model loaded successfully on cuda:0
+2026-01-31 13:25:52,283 - src.experiments.base - INFO - Starting experiment: exp3_evidence_conditioning
+2026-01-31 13:25:52,283 - src.experiments.base - INFO - Model: medgemma_27b
+2026-01-31 13:25:53,134 - src.experiments.exp3_evidence_conditioning - INFO - Loaded 1000 PubMedQA items
+2026-01-31 13:25:53,134 - src.experiments.exp3_evidence_conditioning - INFO - Running condition: question_only
+2026-01-31 13:25:53,290 - src.experiments.base - INFO - Processing 1000 items (cache hits: 0)
+2026-01-31 14:22:00,213 - scripts.run_experiment - INFO - Running experiment: prompt_ablation
+2026-01-31 14:22:00,213 - scripts.run_experiment - INFO - Model: 27b
+2026-01-31 14:22:00,213 - src.models.medgemma - INFO - Loading google/medgemma-27b-text-it with quantization=None
+2026-01-31 14:22:01,524 - src.models.medgemma - INFO - Flash attention not available, using default attention
+2026-01-31 14:22:05,016 - scripts.run_experiment - INFO - Running experiment: option_order
+2026-01-31 14:22:05,016 - scripts.run_experiment - INFO - Model: 27b
+2026-01-31 14:22:05,016 - src.models.medgemma - INFO - Loading google/medgemma-27b-text-it with quantization=None
+2026-01-31 14:22:06,250 - src.models.medgemma - INFO - Flash attention not available, using default attention
+2026-01-31 14:22:56,395 - accelerate.utils.modeling - INFO - We will use 90% of the memory on device 0 for storing the model, and 10% for the buffer to avoid OOM. You can set `max_memory` in to a higher value to use more memory (at your own risk).
+2026-01-31 14:22:56,399 - accelerate.utils.modeling - INFO - We will use 90% of the memory on device 0 for storing the model, and 10% for the buffer to avoid OOM. You can set `max_memory` in to a higher value to use more memory (at your own risk).
+2026-01-31 14:23:04,922 - src.models.medgemma - INFO - Model loaded successfully on cuda:0
+2026-01-31 14:23:04,923 - src.experiments.base - INFO - Starting experiment: exp2_option_order
+2026-01-31 14:23:04,923 - src.experiments.base - INFO - Model: medgemma_27b
+2026-01-31 14:23:05,017 - src.models.medgemma - INFO - Model loaded successfully on cuda:0
+2026-01-31 14:23:05,018 - src.experiments.base - INFO - Starting experiment: exp1_prompt_ablation
+2026-01-31 14:23:05,018 - src.experiments.base - INFO - Model: medgemma_27b
+2026-01-31 14:23:05,874 - src.experiments.exp2_option_order - INFO - Loaded 4183 MedMCQA items
+2026-01-31 14:23:05,875 - src.experiments.exp2_option_order - INFO - Running original order...
+2026-01-31 14:23:06,019 - src.experiments.exp1_prompt_ablation - INFO - Loaded 4183 MedMCQA items
+2026-01-31 14:23:06,019 - src.experiments.exp1_prompt_ablation - INFO - Running condition: zero_shot_direct
+2026-01-31 14:23:06,442 - src.experiments.base - INFO - Processing 4183 items (cache hits: 0)
+2026-01-31 14:23:06,579 - src.experiments.base - INFO - Processing 4183 items (cache hits: 0)
+2026-01-31 15:24:26,608 - src.experiments.exp3_evidence_conditioning - INFO - Running condition: full_context
+2026-01-31 15:24:26,774 - src.experiments.base - INFO - Processing 1000 items (cache hits: 0)
+2026-01-31 17:38:06,178 - src.experiments.exp3_evidence_conditioning - INFO - Running condition: truncated_50
+2026-01-31 17:38:06,371 - src.experiments.base - INFO - Processing 1000 items (cache hits: 0)
+2026-01-31 19:41:14,811 - src.experiments.exp3_evidence_conditioning - INFO - Running condition: truncated_25
+2026-01-31 19:41:14,989 - src.experiments.base - INFO - Processing 1000 items (cache hits: 0)
+2026-01-31 21:37:05,929 - src.experiments.exp3_evidence_conditioning - INFO - Running condition: background_only
+2026-01-31 21:37:06,104 - src.experiments.base - INFO - Processing 1000 items (cache hits: 0)
+2026-01-31 23:07:12,114 - src.experiments.exp3_evidence_conditioning - INFO - Running condition: results_only
+2026-01-31 23:07:12,278 - src.experiments.base - INFO - Processing 979 items (cache hits: 21)
+2026-02-01 00:36:00,468 - src.experiments.base - INFO - Results saved to outputs/results/exp3_evidence_conditioning_medgemma_27b_20260131_132552.json
+2026-02-01 00:36:00,469 - src.utils.checkpointing - INFO - Checkpoint cleared: ./outputs/checkpoints/exp3_evidence_conditioning_medgemma_27b_checkpoint.json
+2026-02-01 00:36:00,469 - scripts.run_experiment - INFO - Experiment completed. Results saved to: outputs/results/exp3_evidence_conditioning_medgemma_27b_20260131_132552.json
+2026-02-01 01:32:47,886 - src.experiments.exp2_option_order - INFO - Running perturbation: random_shuffle
+2026-02-01 01:32:48,512 - src.experiments.base - INFO - Processing 3990 items (cache hits: 193)
+2026-02-01 01:45:39,972 - src.experiments.exp1_prompt_ablation - INFO - Running condition: zero_shot_cot
+2026-02-01 01:45:40,504 - src.experiments.base - INFO - Processing 4183 items (cache hits: 0)
+2026-02-01 02:32:36,747 - src.experiments.exp2_option_order - INFO - Running perturbation: rotate_2
+2026-02-01 02:32:37,392 - src.experiments.base - INFO - Processing 3950 items (cache hits: 233)
+2026-02-01 05:07:03,078 - src.experiments.exp1_prompt_ablation - INFO - Running condition: few_shot_3_cot
+2026-02-01 05:07:03,662 - src.experiments.base - INFO - Processing 4133 items (cache hits: 50)
+2026-02-01 12:13:11,693 - src.experiments.exp2_option_order - INFO - Running perturbation: rotate_1
+2026-02-01 12:13:12,360 - src.experiments.base - INFO - Processing 4017 items (cache hits: 166)
+2026-02-01 13:13:13,097 - src.experiments.exp1_prompt_ablation - INFO - Running condition: few_shot_3_direct
+2026-02-01 13:13:13,703 - src.experiments.base - INFO - Processing 4183 items (cache hits: 0)
