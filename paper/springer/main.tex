@@ -72,7 +72,7 @@ Retrieval-Augmented Generation (RAG) augments a model with external documents at
 
 \subsection{Models and Datasets}
 
-We evaluate MedGemma-4B, the 4-billion parameter instruction-tuned variant at bfloat16 precision, and MedGemma-27B, the 27-billion parameter model requiring full bfloat16 precision on 80\,GB A100 GPUs. Initial experiments with 4-bit quantization on the 27B model produced NaN logits, a notable finding suggesting that quantization techniques validated on general models may not transfer to medical-specialist architectures.
+We evaluate MedGemma-4B, the 4-billion parameter instruction-tuned variant at bfloat16 precision, and MedGemma-27B, the 27-billion parameter model at full bfloat16 precision on 80\,GB A100 GPUs.
 
 We use two standard medical QA benchmarks. MedMCQA~\cite{pal2022medmcqa} contains questions from Indian medical entrance examinations across 21 subjects; we use the 4,183-question validation split. PubMedQA~\cite{jin2019pubmedqa} contains research questions derived from PubMed titles that must be answered using abstracts; we use the 1,000-question labeled subset.
 
@@ -84,15 +84,15 @@ All experiments use a frozen inference protocol for reproducibility. Table~\ref{
 \centering
 \caption{Frozen inference parameters for all experiments.}
 \label{tab:inference}
-\begin{tabular}{lcc}
+\begin{tabular}{lccp{3.8cm}}
 \toprule
-\textbf{Parameter} & \textbf{Deterministic} & \textbf{Self-Consistency} \\
+\textbf{Parameter} & \textbf{Determ.} & \textbf{Self-Cons.} & \textbf{Rationale} \\
 \midrule
-Temperature & 0.0 & 0.7 \\
-Top-$p$ & 1.0 & 0.95 \\
-Top-$k$ & 0 & 50 \\
-\texttt{do\_sample} & False & True \\
-\texttt{max\_new\_tokens} & 256 & 256 \\
+Temperature & 0.0 & 0.7 & Greedy for reproducibility; 0.7 for diverse reasoning paths \\
+Top-$p$ & 1.0 & 0.95 & No nucleus filtering for greedy; mild filtering for sampling \\
+Top-$k$ & 0 & 50 & Disabled for greedy; limits sampling to top 50 tokens \\
+\texttt{do\_sample} & False & True & Greedy decoding vs.\ stochastic sampling \\
+\texttt{max\_new\_tokens} & 256 & 256 & Sufficient for CoT reasoning while bounding cost \\
 \bottomrule
 \end{tabular}
 \end{table}
