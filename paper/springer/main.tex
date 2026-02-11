@@ -99,6 +99,26 @@ Top-$k$ & 0 & 50 & Disabled for greedy; limits sampling to top 50 tokens \\
 
 All runs use the default system prompt and constrain outputs to the valid answer set (A through D for MedMCQA; yes/no/maybe for PubMedQA). We extract answers via regex; unparseable outputs are scored as incorrect. Where randomized perturbations are involved, we report results over multiple seeds (42, 123, 456) with mean and 95\% confidence intervals.
 
+\subsection{Experimental Overview}
+
+Table~\ref{tab:experiment_overview} summarizes the four experiments, their datasets, condition counts, and the core question each one addresses. Detailed descriptions follow below.
+
+\begin{table}[t]
+\centering
+\caption{Overview of the four experiments in our evaluation.}
+\label{tab:experiment_overview}
+\begin{tabular}{clp{2.2cm}cp{3.4cm}}
+\toprule
+\textbf{Exp.} & \textbf{Name} & \textbf{Dataset} & \textbf{Conds.} & \textbf{Core Question} \\
+\midrule
+1 & Prompt Ablation & MedMCQA (4,183) & 10 & Do CoT and few-shot help or hurt? \\
+2 & Option Order & MedMCQA (4,183) & 5 $\times$ 3 seeds & Does shuffling options change the answer? \\
+3 & Evidence Cond. & PubMedQA (1,000) & 11 & How does context truncation affect accuracy? \\
+4 & Robustness Basel. & MedMCQA (4,183) & 3 methods & Can alternative scoring mitigate fragility? \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 \subsection{Experimental Conditions}
 
 \paragraph{Experiment 1: Prompt Ablation.}
@@ -153,6 +173,36 @@ Zero-shot CoT & 41.9\% & [40.4, 43.3] & 0.275 \\
 Few-shot direct (curated) & 35.7\% & [34.3, 37.0] & 0.472 \\
 Few-shot CoT (curated) & 40.8\% & [39.4, 42.3] & 0.413 \\
 Answer-only & 43.0\% & [41.5, 44.6] & 0.096 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Qualitative Examples}
+
+Table~\ref{tab:sample_responses} shows representative model outputs that illustrate our key findings. The first example shows CoT backfiring: direct prompting answers ``D'' (Candidiasis) correctly, but CoT prompting starts analyzing each option, notes that tuberculosis is ``rare in children,'' and yet ultimately selects A (Tuberculosis). The second example shows an option-order flip: the model answers ``B'' (Anterior ethmoidal artery) under the original ordering, correctly identifying a non-branch of the external carotid. When options are shuffled, the content previously at position B moves to position A, but the model again answers ``B,'' now pointing to a different option entirely. It follows position, not content.
+
+\begin{table}[t]
+\centering
+\caption{Sample model responses illustrating key failure modes. All examples from MedGemma-4B on MedMCQA.}
+\label{tab:sample_responses}
+\small
+\begin{tabular}{p{2.0cm}p{8.5cm}}
+\toprule
+\multicolumn{2}{l}{\textbf{Example 1: CoT backfires} (Dental, correct answer: D)} \\
+\midrule
+Question & In a 6-month-old child, thick curd-like white patch appears on the buccal mucosa. On rubbing it leaves an erythematous patch. Most likely diagnosis is: A)~Tuberculosis, B)~Lichen planus, C)~Lupus erythematous, D)~Candidiasis \\
+\addlinespace
+Direct output & \texttt{D} \quad $\checkmark$ \\
+\addlinespace
+CoT output & ``A) Tuberculosis: Oral TB is rare in children\ldots B) Lichen planus: less common in infants\ldots'' \textit{(analyzes each option, then selects \texttt{A})} \quad $\times$ \\
+\midrule
+\multicolumn{2}{l}{\textbf{Example 2: Option order flip} (Anatomy, correct answer: B $\to$ A after shuffle)} \\
+\midrule
+Original & A)~Sphenopalatine, B)~Anterior ethmoidal, C)~Greater palatine, D)~Septal branch. Model answers \textbf{B}. \quad $\checkmark$ \\
+\addlinespace
+Shuffled & A)~Anterior ethmoidal, B)~Septal branch, C)~Sphenopalatine, D)~Greater palatine. Model answers \textbf{B}. \quad $\times$ \\
+\addlinespace
+ & Same question, same knowledge. The correct content moved from B to A, but the model still picks position B. \\
 \bottomrule
 \end{tabular}
 \end{table}
