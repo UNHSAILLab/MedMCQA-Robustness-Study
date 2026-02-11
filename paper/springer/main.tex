@@ -25,7 +25,7 @@ Vahid Behzadan\inst{1}}
 \authorrunning{B. Sadanandan and V. Behzadan}
 %
 \institute{SAIL Lab, University of New Haven, West Haven, CT 06516, USA\\
-\email{\{bsada1,vbehzadan\}@unh.newhaven.edu}}
+\email{bsada1@unh.newhaven.edu, vbehzadan@newhaven.edu}}
 %
 \maketitle
 %
@@ -183,26 +183,30 @@ Table~\ref{tab:sample_responses} shows representative model outputs that illustr
 
 \begin{table}[t]
 \centering
-\caption{Sample model responses illustrating key failure modes. All examples from MedGemma-4B on MedMCQA.}
+\caption{Sample model responses illustrating key failure modes. All examples from MedGemma-4B on MedMCQA. Prompts and outputs are reproduced verbatim.}
 \label{tab:sample_responses}
 \small
-\begin{tabular}{p{2.0cm}p{8.5cm}}
+\begin{tabular}{p{1.8cm}p{8.7cm}}
 \toprule
 \multicolumn{2}{l}{\textbf{Example 1: CoT backfires} (Dental, correct answer: D)} \\
 \midrule
-Question & In a 6-month-old child, thick curd-like white patch appears on the buccal mucosa. On rubbing it leaves an erythematous patch. Most likely diagnosis is: A)~Tuberculosis, B)~Lichen planus, C)~Lupus erythematous, D)~Candidiasis \\
+Prompt (direct) & \texttt{Question: In a 6-month-old child, thick curd like white patch appears on the buccal mucosa. On rubbing it leaves an erythematous patch. Most likely diagnosis is:} \newline \texttt{Options: A) Tuberculosis\; B) Lichen planus\; C) Lupus erythematous\; D) Candidiasis} \newline \texttt{Answer with a single letter (A, B, C, or D).} \\
 \addlinespace
 Direct output & \texttt{D} \quad $\checkmark$ \\
-\addlinespace
-CoT output & ``A) Tuberculosis: Oral TB is rare in children\ldots B) Lichen planus: less common in infants\ldots'' \textit{(analyzes each option, then selects \texttt{A})} \quad $\times$ \\
 \midrule
+Prompt (CoT) & \texttt{Question: [same as above]} \newline \texttt{Think through this step-by-step, analyzing each option. Then provide your final answer as a single letter (A, B, C, or D).} \\
+\addlinespace
+CoT output & \texttt{A) Tuberculosis: Oral tuberculosis is rare in children. While it can present with lesions, they are less likely to be the classic "curd-like" appearance.} \newline \texttt{B) Lichen planus: less common in infants. It typically presents with flat-topped}\ldots \textit{(truncated at 256 tokens; selects} \texttt{A}\textit{)} \quad $\times$ \\
+\midrule\midrule
 \multicolumn{2}{l}{\textbf{Example 2: Option order flip} (Anatomy, correct answer: B $\to$ A after shuffle)} \\
 \midrule
-Original & A)~Sphenopalatine, B)~Anterior ethmoidal, C)~Greater palatine, D)~Septal branch. Model answers \textbf{B}. \quad $\checkmark$ \\
+Prompt (orig.) & \texttt{Question: Which of the following are not a branch of external carotid artery in Kiesselbach's plexus.} \newline \texttt{Options: A) Sphenopalatine artery\; B) Anterior ethmoidal artery\; C) Greater palatine artery\; D) Septal branch of superior labial artery} \newline \texttt{Answer with a single letter (A, B, C, or D).} \\
 \addlinespace
-Shuffled & A)~Anterior ethmoidal, B)~Septal branch, C)~Sphenopalatine, D)~Greater palatine. Model answers \textbf{B}. \quad $\times$ \\
+Output (orig.) & \texttt{B} \quad $\checkmark$ \quad (Anterior ethmoidal is correct; it is not an external carotid branch) \\
+\midrule
+Prompt (shuf.) & \texttt{Question: [same as above]} \newline \texttt{Options: A) Anterior ethmoidal artery\; B) Septal branch of superior labial artery\; C) Sphenopalatine artery\; D) Greater palatine artery} \\
 \addlinespace
- & Same question, same knowledge. The correct content moved from B to A, but the model still picks position B. \\
+Output (shuf.) & \texttt{B} \quad $\times$ \quad (The correct content moved to position A, but the model still picks B) \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -282,11 +286,10 @@ Table~\ref{tab:baselines} compares three robustness-oriented methods against zer
 \cmidrule(lr){2-3} \cmidrule(lr){4-5}
  & Acc. & Pos.\ Bias & Acc. & Pos.\ Bias \\
 \midrule
-Zero-shot direct (ref.) & 47.6\% & 0.137 & \multicolumn{2}{c}{\textit{Pending}} \\
+Zero-shot direct (ref.) & 47.6\% & 0.137 & -- & -- \\
 \midrule
 Cloze scoring & 51.8\% & 0.013 & \textbf{64.5\%} & 0.054 \\
-Permutation vote ($K{=}4$) & 49.0\% & -- & \multicolumn{2}{c}{\textit{Running}} \\
-CoT self-consistency & \multicolumn{2}{c}{\textit{Running}} & \multicolumn{2}{c}{--} \\
+Permutation vote ($K{=}4$) & 49.0\% & -- & -- & -- \\
 \bottomrule
 \end{tabular}
 \end{table}
