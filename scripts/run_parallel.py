@@ -38,13 +38,16 @@ class Task:
     model: str
     gpu_id: int
     limit: Optional[int] = None
+    seed: Optional[int] = None
     extra_args: str = ""
 
     def to_command(self) -> str:
         """Generate the command to run this task."""
-        cmd = f"CUDA_VISIBLE_DEVICES={self.gpu_id} python main.py -e {self.experiment} -m {self.model}"
+        cmd = f"CUDA_VISIBLE_DEVICES={self.gpu_id} python scripts/run_experiment.py {self.experiment} -m {self.model}"
         if self.limit:
             cmd += f" -l {self.limit}"
+        if self.seed is not None:
+            cmd += f" --seed {self.seed}"
         if self.extra_args:
             cmd += f" {self.extra_args}"
         return cmd
@@ -140,14 +143,21 @@ def create_task_schedule(
     models: List[str],
     num_gpus: int,
     limit: Optional[int] = None,
-    gpu_ids: Optional[List[int]] = None
+    gpu_ids: Optional[List[int]] = None,
+    seeds: Optional[List[int]] = None
 ) -> List[Task]:
-    """Create a list of tasks distributed across GPUs."""
+    """Create a list of tasks distributed across GPUs.
+
+    When seeds is provided, a separate task is created for each
+    (experiment, model, seed) combination, enabling multi-seed runs.
+    """
     tasks = []
     gpu_idx = 0
 
     # Use explicit GPU IDs if provided, otherwise use 0 to num_gpus-1
     available_gpus = gpu_ids if gpu_ids else list(range(num_gpus))
+
+    seed_list = seeds if seeds else [None]
 
     for exp_key in experiments:
         if exp_key not in EXPERIMENTS:
@@ -161,15 +171,18 @@ def create_task_schedule(
                 print(f"Warning: Unknown model {model}, skipping")
                 continue
 
-            task = Task(
-                name=f"{exp_key}_{model}",
-                experiment=exp_name,
-                model=model,
-                gpu_id=available_gpus[gpu_idx % len(available_gpus)],
-                limit=limit
-            )
-            tasks.append(task)
-            gpu_idx += 1
+            for seed in seed_list:
+                seed_suffix = f"_seed{seed}" if seed is not None else ""
+                task = Task(
+                    name=f"{exp_key}_{model}{seed_suffix}",
+                    experiment=exp_name,
+                    model=model,
+                    gpu_id=available_gpus[gpu_idx % len(available_gpus)],
+                    limit=limit,
+                    seed=seed,
+                )
+                tasks.append(task)
+                gpu_idx += 1
 
     return tasks
 
@@ -247,6 +260,13 @@ def main():
         help="Run tasks sequentially instead of parallel"
     )
 
+    parser.add_argument(
+        "--seeds",
+        type=str,
+        default=None,
+        help="Comma-separated list of seeds for multi-seed runs (e.g., '42,123,456,789,1337')"
+    )
+
     args = parser.parse_args()
 
     # Expand 'all' options
@@ -259,8 +279,14 @@ def main():
         gpu_ids = [int(g.strip()) for g in args.gpu_ids.split(",")]
         print(f"Using specific GPUs: {gpu_ids}")
 
+    # Parse seeds if provided
+    seeds = None
+    if args.seeds:
+        seeds = [int(s.strip()) for s in args.seeds.split(",")]
+        print(f"Multi-seed mode: {seeds}")
+
     # Create task schedule
-    tasks = create_task_schedule(experiments, models, args.gpus, args.limit, gpu_ids)
+    tasks = create_task_schedule(experiments, models, args.gpus, args.limit, gpu_ids, seeds)
 
     if not tasks:
         print("No tasks to run!")

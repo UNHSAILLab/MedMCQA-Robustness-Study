@@ -31,6 +31,11 @@ class EvidenceConditioningExperiment(BaseExperiment):
         {'name': 'truncated_25', 'mode': 'truncated', 'ratio': 0.25},
         {'name': 'background_only', 'mode': 'sections', 'sections': ['BACKGROUND', 'OBJECTIVE', 'OBJECTIVES']},
         {'name': 'results_only', 'mode': 'sections', 'sections': ['RESULTS', 'CONCLUSIONS', 'FINDINGS']},
+        {'name': 'truncated_back_50', 'mode': 'truncated_back', 'ratio': 0.5},
+        {'name': 'truncated_middle_50', 'mode': 'truncated_middle', 'ratio': 0.5},
+        {'name': 'sentence_trunc_50', 'mode': 'sentence_truncated', 'ratio': 0.5},
+        {'name': 'salient_top5', 'mode': 'salient', 'top_k': 5},
+        {'name': 'salient_top3', 'mode': 'salient', 'top_k': 3},
     ]
 
     @property
@@ -73,13 +78,26 @@ class EvidenceConditioningExperiment(BaseExperiment):
             elif condition['mode'] == 'sections':
                 sections = condition.get('sections', [])
                 processed_data = [truncator.keep_sections(item, sections) for item in data]
+            elif condition['mode'] == 'truncated_back':
+                ratio = condition.get('ratio', 0.5)
+                processed_data = [truncator.truncate_back(item, ratio) for item in data]
+            elif condition['mode'] == 'truncated_middle':
+                ratio = condition.get('ratio', 0.5)
+                processed_data = [truncator.truncate_middle(item, ratio) for item in data]
+            elif condition['mode'] == 'sentence_truncated':
+                ratio = condition.get('ratio', 0.5)
+                processed_data = [truncator.truncate_by_sentences(item, ratio) for item in data]
+            elif condition['mode'] == 'salient':
+                top_k = condition.get('top_k', 5)
+                processed_data = [truncator.extract_salient_sentences(item, top_k) for item in data]
             else:
                 processed_data = data
 
             # Build prompt function based on condition
             context_mode = condition['mode']
-            if context_mode == 'sections':
-                context_mode = 'full'  # sections are already filtered
+            if context_mode in ('sections', 'truncated_back', 'truncated_middle',
+                                'sentence_truncated', 'salient'):
+                context_mode = 'full'  # context already manipulated
 
             def build_prompt(item: PubMedQAItem, mode=context_mode) -> str:
                 return template.format(item, context_mode=mode)

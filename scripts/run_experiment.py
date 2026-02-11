@@ -16,6 +16,11 @@ from src.experiments.exp1_prompt_ablation import PromptAblationExperiment
 from src.experiments.exp2_option_order import OptionOrderExperiment
 from src.experiments.exp3_evidence_conditioning import EvidenceConditioningExperiment
 from src.experiments.exp4_self_consistency import SelfConsistencyExperiment
+from src.experiments.exp5_robust_baselines import (
+    CoTSelfConsistencyExperiment,
+    PermutationVoteExperiment,
+    ClozeScoreExperiment,
+)
 
 logging.basicConfig(
     level=logging.INFO,
@@ -29,6 +34,9 @@ EXPERIMENTS = {
     'option_order': OptionOrderExperiment,
     'evidence_conditioning': EvidenceConditioningExperiment,
     'self_consistency': SelfConsistencyExperiment,
+    'cot_self_consistency': CoTSelfConsistencyExperiment,
+    'permutation_vote': PermutationVoteExperiment,
+    'cloze_score': ClozeScoreExperiment,
     'all': None  # Special case
 }
 
@@ -52,21 +60,29 @@ def load_config(config_path: str = None) -> dict:
         with open(config_path) as f:
             return yaml.safe_load(f)
 
-    # Default config
+    # Default config — must stay in sync with configs/base.yaml
     return {
         'seed': 42,
+        'seeds': [42, 123, 456, 789, 1337],
         'inference': {
             'batch_size': 4,
-            'checkpoint_interval': 100
+            'checkpoint_interval': 100,
+            'use_cache': True
         },
         'generation': {
             'max_new_tokens': 256,
             'temperature': 0.0,
+            'top_p': 1.0,
+            'top_k': 0,
             'do_sample': False
         },
         'self_consistency': {
             'temperature': 0.7,
-            'sample_counts': [1, 3, 5]
+            'top_p': 0.95,
+            'top_k': 50,
+            'do_sample': True,
+            'max_new_tokens': 256,
+            'sample_counts': [1, 3, 5, 10]
         }
     }
 
@@ -156,6 +172,26 @@ def run_experiment(
                               f"acc={data.get('accuracy', 0):.1%}, "
                               f"ECE={data.get('ece', 0):.3f}")
 
+    elif experiment_name == 'cot_self_consistency':
+        print("\nCoT Self-Consistency (MedMCQA):")
+        for key, data in metrics.items():
+            if key.startswith('n_'):
+                print(f"  N={data.get('n_samples', key)}: "
+                      f"acc={data.get('accuracy', 0):.1%}, "
+                      f"confidence={data.get('mean_confidence', 0):.3f}")
+
+    elif experiment_name == 'permutation_vote':
+        print("\nPermutation Vote (MedMCQA):")
+        print(f"  Aggregated accuracy: {metrics.get('aggregated_accuracy', 0):.1%}")
+        print(f"  Per-perm accuracy mean: {metrics.get('per_permutation_accuracy_mean', 0):.1%}")
+        print(f"  Per-perm accuracy std:  {metrics.get('per_permutation_accuracy_std', 0):.3f}")
+        print(f"  Mean agreement rate:    {metrics.get('mean_agreement_rate', 0):.3f}")
+
+    elif experiment_name == 'cloze_score':
+        print("\nCloze Score (MedMCQA):")
+        print(f"  Accuracy: {metrics.get('accuracy', 0):.1%}")
+        print(f"  Mean logprob margin: {metrics.get('mean_logprob_margin', 0):.3f}")
+
     print("=" * 60)
 
     # Unload model
@@ -203,10 +239,21 @@ def main():
         help="Output directory for results"
     )
 
+    parser.add_argument(
+        '--seed', '-s',
+        type=int,
+        default=None,
+        help="Random seed (overrides config seed)"
+    )
+
     args = parser.parse_args()
 
     # Load config
     config = load_config(args.config)
+
+    # Override seed if provided
+    if args.seed is not None:
+        config['seed'] = args.seed
 
     if args.experiment == 'all':
         # Run all experiments

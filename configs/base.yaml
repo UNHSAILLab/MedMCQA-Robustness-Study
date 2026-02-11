@@ -1,5 +1,18 @@
-seed: 42
+# =============================================================================
+# Frozen Inference Configuration — Single Source of Truth
+# =============================================================================
+# All experiments MUST use these settings to ensure reproducibility.
+# Any deviation must be explicitly documented and justified.
 
+# ---------------------------------------------------------------------------
+# Multi-seed configuration (for statistical robustness)
+# ---------------------------------------------------------------------------
+seed: 42
+seeds: [42, 123, 456, 789, 1337]
+
+# ---------------------------------------------------------------------------
+# Paths
+# ---------------------------------------------------------------------------
 paths:
   cache_dir: ./outputs/cache
   results_dir: ./outputs/results
@@ -7,27 +20,140 @@ paths:
   checkpoints_dir: ./outputs/checkpoints
   hf_cache_dir: ~/.cache/huggingface
 
+# ---------------------------------------------------------------------------
+# Logging
+# ---------------------------------------------------------------------------
 logging:
   level: INFO
   format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
   save_to_file: true
 
+# ---------------------------------------------------------------------------
+# Inference settings
+# ---------------------------------------------------------------------------
 inference:
   batch_size: 4
   checkpoint_interval: 100
   use_cache: true
 
+# ---------------------------------------------------------------------------
+# Generation config — deterministic (greedy) decoding
+# ---------------------------------------------------------------------------
+# Used for all experiments EXCEPT self-consistency sampling.
+# Greedy decoding: always pick the highest-probability token.
+generation:
+  max_new_tokens: 256
+  temperature: 0.0       # Greedy — no randomness
+  top_p: 1.0             # Disabled (no nucleus sampling for greedy)
+  top_k: 0               # Disabled (no top-k filtering for greedy)
+  do_sample: false        # Deterministic decoding
+  # Stop criteria: EOS token is handled natively by the model/tokenizer.
+  # No additional stop strings are injected.
+
+# ---------------------------------------------------------------------------
+# Self-consistency sampling config
+# ---------------------------------------------------------------------------
+# Used ONLY by exp4_self_consistency. Overrides generation config above.
+self_consistency:
+  temperature: 0.7        # Moderate diversity for sampling
+  top_p: 0.95             # Nucleus sampling threshold
+  top_k: 50               # Top-k filtering for diversity
+  do_sample: true          # Enable stochastic sampling
+  max_new_tokens: 256
+  sample_counts: [1, 3, 5, 10]   # Number of samples per question
+
+# ---------------------------------------------------------------------------
+# CoT self-consistency config (exp5)
+# ---------------------------------------------------------------------------
+# Used by exp5_robust_baselines.CoTSelfConsistencyExperiment.
+cot_sc:
+  temperature: 0.7
+  sample_counts: [3, 5]        # Skip N=10 — diminishing returns
+
+# ---------------------------------------------------------------------------
+# Permutation-vote config (exp5)
+# ---------------------------------------------------------------------------
+# Used by exp5_robust_baselines.PermutationVoteExperiment.
+permutation_vote:
+  k: 4                          # Number of option permutations per item
+  use_all: false                 # If true, use all 24 permutations (overrides k)
+
+# ---------------------------------------------------------------------------
+# System prompts / personas
+# ---------------------------------------------------------------------------
+# Documented here for reproducibility; actual strings live in
+# src/prompts/templates.py to keep them co-located with formatting logic.
+system_prompts:
+  medmcqa: >
+    You are a medical expert answering multiple choice questions.
+    Analyze each question carefully and select the most accurate answer.
+  # PubMedQA uses task-level instructions embedded in the prompt template
+  # (no separate system prompt). See PubMedQAPromptTemplate in templates.py.
+
+# ---------------------------------------------------------------------------
+# Output constraints & parsing
+# ---------------------------------------------------------------------------
+output_constraints:
+  medmcqa:
+    valid_answers: ["A", "B", "C", "D"]
+    parse_function: "src.evaluation.metrics.parse_mcq_answer"
+    # Parsing strategy: look for "Answer: X" pattern first, then first
+    # occurrence of A/B/C/D. Falls back to "UNKNOWN".
+  pubmedqa:
+    valid_answers: ["yes", "no", "maybe"]
+    parse_function: "src.evaluation.metrics.parse_pubmedqa_answer"
+    # Parsing strategy: check for explicit start-of-string or "answer: X"
+    # patterns, then keyword fallback. Falls back to "unknown".
+
+# ---------------------------------------------------------------------------
+# Model configurations
+# ---------------------------------------------------------------------------
 models:
   medgemma_4b:
     model_id: google/medgemma-4b-it
-    quantization: null
+    quantization: null       # Full precision (bf16)
     max_new_tokens: 256
+    context_length: 8192
+    torch_dtype: bfloat16
+    device_map: auto
 
   medgemma_27b:
     model_id: google/medgemma-27b-text-it
-    quantization: 4bit
+    quantization: null       # Full precision — 4bit has NaN issues
     max_new_tokens: 256
+    context_length: 8192
+    torch_dtype: bfloat16
+    device_map: auto
 
+  medgemma_27b_4bit:
+    model_id: google/medgemma-27b-text-it
+    quantization: 4bit       # Known NaN issues — use full precision instead
+    max_new_tokens: 256
+    context_length: 8192
+    torch_dtype: bfloat16
+    device_map: auto
+    deprecated: true
+    deprecation_reason: "4-bit quantization produces NaN outputs for 27B variant"
+
+  biomistral_7b:
+    model_id: BioMistral/BioMistral-7B
+    quantization: null
+    max_new_tokens: 256
+    context_length: 4096
+    torch_dtype: bfloat16
+    device_map: auto
+
+  meditron_7b:
+    model_id: epfl-llm/meditron-7b
+    quantization: null
+    max_new_tokens: 256
+    context_length: 4096
+    torch_dtype: bfloat16
+    device_map: auto
+
+# ---------------------------------------------------------------------------
+# Dataset configurations
+# ---------------------------------------------------------------------------
 datasets:
   medmcqa:
     hf_id: openlifescienceai/medmcqa

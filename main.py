@@ -130,13 +130,16 @@ def main():
     parser.add_argument(
         '--experiment', '-e',
         choices=['prompt_ablation', 'option_order', 'evidence_conditioning',
-                 'self_consistency', 'all'],
+                 'self_consistency', 'cot_self_consistency', 'permutation_vote',
+                 'cloze_score', 'all'],
         help="Experiment to run"
     )
 
     parser.add_argument(
         '--model', '-m',
-        choices=['4b', '27b', '27b-4bit', '27b-8bit', 'biomistral-7b'],
+        choices=['4b', '27b', '27b-4bit', '27b-8bit',
+                 'biomistral-7b', 'biomistral-7b-4bit',
+                 'meditron-7b', 'meditron-7b-4bit'],
         default='4b',
         help="Model variant (default: 4b). Note: 27b requires ~55GB VRAM, use 27b (full precision) not 27b-4bit (has NaN issues)"
     )

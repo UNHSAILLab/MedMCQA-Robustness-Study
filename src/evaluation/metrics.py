@@ -212,6 +212,151 @@ class MCQMetrics:
         return result
 
     @staticmethod
+    def per_position_accuracy(
+        predictions: List[str],
+        labels: List[str],
+        positions: List[str]
+    ) -> Dict[str, Dict[str, Any]]:
+        """Accuracy broken down by which position (A/B/C/D) the correct answer was in.
+
+        Args:
+            predictions: List of predicted answers
+            labels: List of correct answers
+            positions: List indicating the position of the correct answer for each question
+
+        Returns:
+            Dict mapping each position to {accuracy, n, correct}
+        """
+        options = ['A', 'B', 'C', 'D']
+        results: Dict[str, Dict[str, Any]] = {}
+
+        for pos in options:
+            mask = [p == pos for p in positions]
+            pos_preds = [pr for pr, m in zip(predictions, mask) if m]
+            pos_labels = [la for la, m in zip(labels, mask) if m]
+
+            correct = sum(1 for p, l in zip(pos_preds, pos_labels) if p == l)
+            n = len(pos_preds)
+            results[pos] = {
+                'accuracy': correct / n if n > 0 else 0.0,
+                'n': n,
+                'correct': correct
+            }
+
+        return results
+
+    @staticmethod
+    def ckld(predictions: List[str], labels: List[str]) -> float:
+        """Chi-squared KL Divergence for position bias.
+
+        Measures how far the prediction distribution deviates from the expected
+        (label) distribution across positions A-D.
+
+        CKLD = sum((observed_i - expected_i)^2 / expected_i)
+
+        where observed_i is the proportion of predictions for position i, and
+        expected_i is the proportion of labels at position i. If labels are not
+        informative (all zero for a position), falls back to uniform (1/4).
+
+        Args:
+            predictions: List of predicted answers
+            labels: List of correct answers
+
+        Returns:
+            CKLD value (0 means perfect match; higher means more divergence)
+        """
+        n = len(predictions)
+        if n == 0:
+            return 0.0
+
+        options = ['A', 'B', 'C', 'D']
+        pred_counts = Counter(predictions)
+        label_counts = Counter(labels)
+
+        observed = np.array([pred_counts.get(k, 0) / n for k in options])
+        expected = np.array([label_counts.get(k, 0) / n for k in options])
+
+        # Fall back to uniform for any position with zero expected proportion
+        for i in range(len(expected)):
+            if expected[i] == 0.0:
+                expected[i] = 0.25
+
+        ckld_val = float(np.sum((observed - expected) ** 2 / expected))
+        return ckld_val
+
+    @staticmethod
+    def rstd(predictions: List[str], labels: List[str]) -> float:
+        """Relative Standard Deviation of per-position accuracies.
+
+        RStd = std(per_position_accs) / mean(per_position_accs)
+
+        Captures uniformity of performance across positions. A value of 0
+        means identical accuracy at every position; higher values indicate
+        more variation.
+
+        Args:
+            predictions: List of predicted answers
+            labels: List of correct answers
+
+        Returns:
+            RStd value (0 means uniform performance; higher means more variation).
+            Returns 0.0 if mean accuracy is zero.
+        """
+        options = ['A', 'B', 'C', 'D']
+        # Compute accuracy for each position (position = correct answer label)
+        per_pos_accs = []
+        for pos in options:
+            mask = [l == pos for l in labels]
+            pos_preds = [p for p, m in zip(predictions, mask) if m]
+            pos_labels = [l for l, m in zip(labels, mask) if m]
+            n = len(pos_preds)
+            if n > 0:
+                acc = sum(1 for p, l in zip(pos_preds, pos_labels) if p == l) / n
+            else:
+                acc = 0.0
+            per_pos_accs.append(acc)
+
+        arr = np.array(per_pos_accs)
+        mean_acc = float(arr.mean())
+        if mean_acc == 0.0:
+            return 0.0
+        return float(arr.std() / mean_acc)
+
+    @staticmethod
+    def position_histogram_data(
+        predictions: List[str],
+        labels: List[str]
+    ) -> Dict[str, Dict[str, float]]:
+        """Return data for predicted-vs-expected position histograms.
+
+        Shows the distribution of predictions vs the distribution of correct
+        answers across positions A-D.
+
+        Args:
+            predictions: List of predicted answers
+            labels: List of correct answers
+
+        Returns:
+            Dict with:
+            - predicted: {A: proportion, B: ..., C: ..., D: ...}
+            - expected: {A: proportion, B: ..., C: ..., D: ...}
+        """
+        n = len(predictions)
+        options = ['A', 'B', 'C', 'D']
+
+        if n == 0:
+            empty = {k: 0.0 for k in options}
+            return {'predicted': empty, 'expected': empty}
+
+        pred_counts = Counter(predictions)
+        label_counts = Counter(labels)
+
+        predicted = {k: pred_counts.get(k, 0) / n for k in options}
+        expected = {k: label_counts.get(k, 0) / n for k in options}
+
+        return {'predicted': predicted, 'expected': expected}
+
+    @staticmethod
     def robustness_score(
         original_preds: List[str],
         perturbed_preds: List[str],
