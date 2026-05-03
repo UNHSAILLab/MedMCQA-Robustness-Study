@@ -227,7 +227,6 @@ If you use this code or findings in your research, please cite:
 }
 ```
 
-> Replace the `booktitle` field with the full proceedings name once available.
 
 ## Paper
 
@@ -256,7 +255,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Contact
 
 **Binesh Sadanandan** — bsada1@unh.newhaven.edu
-**Vahid Behzadan** — vbehzadan@newhaven.edu
 
 SAIL Lab, University of New Haven, West Haven, CT 06516, USA
 
