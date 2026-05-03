@@ -1,37 +1,40 @@
 # Paper: When Chain-of-Thought Backfires
 
-This directory contains the LaTeX source for our paper evaluating prompt sensitivity in MedGemma.
+LaTeX source and camera-ready PDF for our paper evaluating prompt sensitivity in MedGemma.
 
-## Structure
+**Camera-ready PDF:** [`2AI_CRC_183.pdf`](2AI_CRC_183.pdf)
+**Authors:** Binesh Sadanandan, Vahid Behzadan (SAIL Lab, University of New Haven)
+
+## Files
 
 ```
 paper/
-├── main.tex              # Main paper source
+├── 2AI_CRC_183.pdf       # Camera-ready submission (final)
+├── main.tex              # LaTeX source
+├── main.pdf              # Latest local build (same as camera-ready)
 ├── references.bib        # Bibliography
-├── generate_figures.py   # Script to generate figures from results
+├── generate_figures.py   # Generates figures from experiment results
 ├── figures/              # Generated figures (PDF and PNG)
+├── springer/             # Springer LNCS template files
 └── README.md             # This file
 ```
 
-## Building the Paper
+## Building from Source
 
 ### Prerequisites
 
-- LaTeX distribution (TeX Live recommended)
-- Python 3.8+ with matplotlib, seaborn, numpy
+- LaTeX distribution (TeX Live 2023 or later recommended)
+- Python 3.8+ with matplotlib, seaborn, numpy (for figure generation)
 
 ### Generate Figures
 
-First, ensure experiments have been run:
+If you want to regenerate figures from raw experiment outputs:
 
 ```bash
-# From project root
+# From project root, run experiments first
 python scripts/run_parallel.py --gpu-ids 1,2,3,4,5,6,7
-```
 
-Then generate figures:
-
-```bash
+# Then generate figures
 cd paper
 python generate_figures.py
 ```
@@ -52,23 +55,15 @@ Or use latexmk:
 latexmk -pdf main.tex
 ```
 
-## Status
+The output `main.pdf` should match `2AI_CRC_183.pdf`.
 
-- [x] Abstract drafted
-- [x] Introduction drafted
-- [x] Methods section complete
-- [x] Figure generation script
-- [ ] Full experimental results (50-sample pilot complete)
-- [ ] Results section with full data
-- [ ] Discussion updates
-- [ ] Final proofreading
+## Bibliography
 
-## Key Findings (Pilot, n=50)
+All 22 citations were verified against [scite.ai](https://scite.ai/) metadata:
+- Author names match published versions
+- Titles match published versions
+- DOIs included where available
 
-| Finding | Result |
-|---------|--------|
-| CoT Gain | -8% (hurts performance) |
-| Few-shot Gain | -12% (hurts performance) |
-| Position Bias | Model predicts 'A' 52% vs 42% actual |
-| Context Gain | +10% (full vs question-only) |
-| Truncation Effect | 25% truncation worse than no context |
+## Code Availability
+
+A footnote on the title page links to this repository: <https://github.com/UNHSAILLab/MedMCQA-Robustness-Study>. Appendix H also lists it under Reproducibility.

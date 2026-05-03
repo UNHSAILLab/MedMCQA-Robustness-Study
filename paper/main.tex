@@ -1,168 +1,250 @@
-\documentclass{article}
-\usepackage[utf8]{inputenc}
-\usepackage{amsmath,amssymb}
+% Springer LNCS format
+\documentclass[runningheads,a4paper]{llncs}
+%
+\usepackage[T1]{fontenc}
 \usepackage{graphicx}
+\usepackage{amsmath,amssymb}
 \usepackage{booktabs}
-\usepackage{hyperref}
-\usepackage[margin=1in]{geometry}
-\usepackage{natbib}
 \usepackage{xcolor}
-
-\title{When Chain-of-Thought Backfires: Evaluating Prompt Sensitivity in Medical Language Models}
-
-\author{
-  Binesh Sadanandan\\
-  University of New Haven\\
-  \texttt{bsada1@unh.newhaven.edu}
-}
-
-\date{}
-
+\usepackage{multirow}
+%
+% Springer eBook URL style
+\usepackage{xurl}
+\renewcommand\UrlFont{\color{blue}\rmfamily}
+\graphicspath{{../figures/}}
+%
 \begin{document}
-
+%
+\title{When Chain-of-Thought Backfires:\\ Evaluating Prompt Sensitivity in Medical Language Models\thanks{Code and analysis scripts: \protect\url{https://github.com/UNHSAILLab/MedMCQA-Robustness-Study}}}
+%
+\titlerunning{Prompt Sensitivity in Medical Language Models}
+%
+\author{Binesh Sadanandan\inst{1} \and
+Vahid Behzadan\inst{1}}
+%
+\authorrunning{B. Sadanandan and V. Behzadan}
+%
+\institute{SAIL Lab, University of New Haven, West Haven, CT 06516, USA\\
+\email{bsada1@unh.newhaven.edu, vbehzadan@newhaven.edu}}
+%
 \maketitle
-
+%
 \begin{abstract}
-Large language models are increasingly deployed in medical settings, yet their sensitivity to prompt formatting remains poorly characterized. We evaluate MedGemma (4B and 27B variants) on MedMCQA (4,183 questions) and PubMedQA (1,000 questions) across a comprehensive suite of robustness tests. Our experiments reveal concerning findings: chain-of-thought prompting \textit{decreases} accuracy by 5.7\% compared to direct answering; few-shot examples degrade performance by 11.9\% while increasing position bias from 0.14 to 0.47; shuffling answer options causes the model to change predictions 59.1\% of the time with accuracy dropping up to 27.4 percentage points; and front-truncating context to 50\% causes accuracy to plummet below the no-context baseline---yet back-truncation preserves 97\% of full-context accuracy. We further show that cloze scoring (selecting the highest log-probability option token) achieves 51.8\% (4B) and 64.5\% (27B)---surpassing all prompting strategies and revealing that models ``know'' more than their generated text shows---while permutation voting recovers 4 percentage points over single-ordering inference. These results demonstrate that prompt engineering techniques validated on general-purpose models do not transfer to domain-specific medical LLMs, and that robust alternatives exist.
+Large Language Models (LLMs) are increasingly deployed in medical settings, yet their sensitivity to prompt formatting remains poorly characterized. We evaluate MedGemma (4B and 27B parameters) on MedMCQA (4,183 questions) and PubMedQA (1,000 questions) across a broad suite of robustness tests. Our experiments reveal several concerning findings. Chain-of-Thought (CoT) prompting \textit{decreases} accuracy by 5.7\% compared to direct answering. Few-shot examples degrade performance by 11.9\% while increasing position bias from 0.14 to 0.47. Shuffling answer options causes the model to change predictions 59.1\% of the time, with accuracy dropping up to 27.4 percentage points. Front-truncating context to 50\% causes accuracy to plummet below the no-context baseline, yet back-truncation preserves 97\% of full-context accuracy. We further show that cloze scoring (selecting the highest log-probability option token) achieves 51.8\% (4B) and 64.5\% (27B), surpassing all prompting strategies and revealing that models ``know'' more than their generated text shows. Permutation voting recovers 4 percentage points over single-ordering inference. These results demonstrate that prompt engineering techniques validated on general-purpose models do not transfer to domain-specific medical LLMs, and that reliable alternatives exist.
+
+\keywords{Medical question answering \and Prompt sensitivity \and Language model robustness \and Chain-of-thought \and Position bias \and Cloze scoring}
 \end{abstract}
 
+%% ================================================================
 \section{Introduction}
 
-Large language models have achieved impressive performance on medical licensing exams, with GPT-4 exceeding passing thresholds by over 20 points \citep{nori2023capabilities} and Med-PaLM 2 reaching 86.5\% on MedQA \citep{singhal2023medpalm2}. These results have fueled enthusiasm for deploying LLMs in clinical decision support. However, benchmark accuracy tells only part of the story---how models respond to variations in prompt format, question ordering, and context presentation remains poorly understood, despite being critical for real-world deployment where inputs are rarely formatted identically to benchmark conditions.
+LLMs have achieved impressive performance on medical licensing exams, with GPT-4 exceeding passing thresholds by over 20 points~\cite{nori2023capabilities} and Med-PaLM~2 reaching 86.5\% on MedQA~\cite{singhal2023medpalm2}. These results have fueled enthusiasm for deploying LLMs in clinical decision support. But benchmark accuracy tells only part of the story. How models respond to variations in prompt format, question ordering, and context presentation remains poorly understood, despite being critical for real-world deployment where inputs are rarely formatted identically to benchmark conditions.
 
-We focus on MedGemma \citep{medgemma2025}, Google's medical-specialist LLM built on the Gemma architecture. A widely held belief in the LLM community is that certain prompting strategies reliably improve performance. Chain-of-thought prompting, which instructs models to reason step-by-step before answering, has shown consistent gains on mathematical and logical reasoning tasks \citep{wei2022chain}. Few-shot learning, where examples are provided in-context, helps models understand desired output formats \citep{brown2020language}. These techniques are often treated as ``best practices'' that should transfer across domains and model families.
+We focus on MedGemma~\cite{medgemma2025}, Google's medical-specialist LLM built on the Gemma architecture. A widely held belief in the LLM community is that certain prompting strategies reliably improve performance. CoT prompting, which instructs models to reason step-by-step before answering, has shown consistent gains on mathematical and logical reasoning tasks~\cite{wei2022chain}. Few-shot learning, where examples are provided in-context, helps models understand desired output formats~\cite{brown2020language}. These techniques are often treated as ``best practices'' that should transfer across domains and model families.
 
-But should they? Domain-specific models may have internalized different patterns during training. A model trained extensively on medical literature might already encode structured clinical reasoning, making explicit chain-of-thought prompts redundant or even counterproductive. Similarly, few-shot examples drawn from one medical specialty might prime the model with concepts that are irrelevant or misleading for questions in other specialties.
+But should they? Domain-specific models may have internalized different patterns during training. A model trained extensively on medical literature might already encode structured clinical reasoning, making explicit CoT prompts redundant or even counterproductive. Similarly, few-shot examples drawn from one medical specialty might prime the model with concepts that are irrelevant or misleading for questions in other specialties.
 
-We present a systematic evaluation of MedGemma's sensitivity to prompt variations across four experimental axes. First, we conduct a prompt ablation study comparing ten prompting strategies---including few-shot selection methods and example order sensitivity---on 4,183 MedMCQA questions, measuring both accuracy and position bias. Second, we test option order sensitivity by shuffling answer choices across multiple random seeds and measuring how often the model changes its prediction---a direct test of whether responses reflect semantic understanding or superficial position cues. Third, we evaluate evidence conditioning on 1,000 PubMedQA questions across eleven context conditions, including five truncation strategies that reveal which parts of the abstract carry diagnostic value. Fourth, we benchmark robustness-oriented alternatives: cloze scoring, permutation voting, and CoT self-consistency. Our findings challenge conventional assumptions about prompt engineering in medical AI and identify practical mitigations for deployment.
+We present a systematic evaluation of MedGemma's sensitivity to prompt variations across four experimental axes. First, we conduct a prompt ablation study comparing ten prompting strategies on 4,183 MedMCQA questions, measuring both accuracy and position bias. Second, we test option order sensitivity by shuffling answer choices across multiple random seeds and measuring how often the model changes its prediction. Third, we evaluate evidence conditioning on 1,000 PubMedQA questions across eleven context conditions, including five truncation strategies that reveal which parts of the abstract carry diagnostic value. Fourth, we benchmark robustness-oriented alternatives: cloze scoring, permutation voting, and CoT self-consistency. Our findings challenge conventional assumptions about prompt engineering in medical AI and identify practical mitigations for deployment.
 
+%% ================================================================
 \section{Related Work}
 
-\paragraph{Medical Language Models and Benchmarks.} Medical language models often demonstrate impressive benchmark scores on exam-style question answering. For example, GPT-4 performs strongly on medical challenge sets \citep{nori2023capabilities}, and Med-PaLM and Med-PaLM 2 report high scores on MedQA \citep{singhal2023large, singhal2023medpalm2}. Open, domain-tuned models have also emerged, including MedGemma \citep{medgemma2025} and BioMistral \citep{labrak2024biomistral}. However, most reporting still emphasizes a single headline accuracy, while deployment inputs vary in formatting, context quality, and answer presentation.
+\paragraph{Medical QA Models.}
+Medical language models often demonstrate impressive benchmark scores on exam-style question answering. GPT-4 performs strongly on medical challenge sets~\cite{nori2023capabilities}, and Med-PaLM and Med-PaLM~2 report high scores on MedQA~\cite{singhal2023large,singhal2023medpalm2}. Open, domain-tuned models have also emerged, including MedGemma~\cite{medgemma2025} and BioMistral~\cite{labrak2024biomistral}. However, most reporting still emphasizes a single headline accuracy, while deployment inputs vary in formatting, context quality, and answer presentation.
 
-\paragraph{Prompting for Reasoning.} Chain-of-thought (CoT) prompting can improve performance on general reasoning tasks by eliciting intermediate steps \citep{wei2022chain}. Follow-up work such as self-consistency explores sampling multiple reasoning paths and aggregating answers \citep{wang2023selfconsistency}. These techniques are now common defaults, despite their added token cost and their sensitivity to output parsing.
+\paragraph{Prompting for Reasoning.}
+CoT prompting can improve performance on general reasoning tasks by eliciting intermediate steps~\cite{wei2022chain}. Follow-up work such as self-consistency explores sampling multiple reasoning paths and aggregating answers~\cite{wang2023selfconsistency}. These techniques are now common defaults, despite their added token cost and their sensitivity to output parsing.
 
-\paragraph{When CoT Backfires.} Recent work challenges the idea that CoT helps everywhere. \citet{sprague2024mind} identify settings where step-by-step prompting reduces accuracy, connecting these failures to cases where deliberate reasoning hurts humans as well. Meincke et al.\ argue that the gains from CoT have diminished for newer models and can even reverse on some tasks \citep{meincke2024cot}. In medical question answering, Omar et al.\ compare multiple CoT-style prompts and find that improvements depend on the specific method and dataset, rather than following a simple monotonic trend \citep{omar2024cotmedical}.
+\paragraph{When CoT Backfires.}
+Recent work challenges the idea that CoT helps everywhere. Liu et al.~\cite{liu2024mindyourstep} identify settings where step-by-step prompting reduces accuracy, connecting these failures to cases where deliberate reasoning hurts humans as well. Meincke et al.\ argue that the gains from CoT have diminished for newer models and can even reverse on some tasks~\cite{meincke2025cot}. In medical question answering, Jeon and Kim compare multiple CoT-style prompts and find that improvements depend on the specific method and dataset, rather than following a simple monotonic trend~\cite{jeon2025cotmedical}.
 
-\paragraph{Prompt Sensitivity and Few-shot Formatting.} Even without CoT, small prompt changes can shift performance. \citet{lu2022fantastically} show that few-shot example order can materially affect accuracy, and \citet{zhao2021calibrate} propose calibration methods that reduce sensitivity to label and prompt priors. ProSA provides a more systematic view by measuring how model outputs vary across prompt templates \citep{prosa2024}. Together, this work suggests that comparisons between models can be misleading if prompt choices are not controlled.
+\paragraph{Prompt Sensitivity and Few-shot Formatting.}
+Even without CoT, small prompt changes can shift performance. Lu et al.~\cite{lu2022fantastically} show that few-shot example order can materially affect accuracy, and Zhao et al.~\cite{zhao2021calibrate} propose calibration methods that reduce sensitivity to label and prompt priors. ProSA provides a more systematic view by measuring how model outputs vary across prompt templates~\cite{zhuo2024prosa}. Together, this work suggests that comparisons between models can be misleading if prompt choices are not controlled.
 
-\paragraph{Multiple-choice Artifacts.} Multiple-choice evaluation introduces its own failure modes. \citet{zheng2024llm} show that LLMs exhibit selection bias, preferring certain option identifiers even when content is balanced. Our option reordering experiments build on this line of work by separating changes in answer position from changes in distractor content.
+\paragraph{Multiple-choice Artifacts.}
+Multiple-choice evaluation introduces its own failure modes. Zheng et al.~\cite{zheng2024llm} show that LLMs exhibit selection bias, preferring certain option identifiers even when content is balanced. Our option reordering experiments build on this line of work by separating changes in answer position from changes in distractor content.
 
-\paragraph{Retrieval and Context Quality.} Retrieval-augmented generation (RAG) augments a model with external documents at inference time. In medicine, benchmarking work finds large variation in RAG performance across retrievers and corpora, and it reports a pronounced ``lost-in-the-middle'' effect in biomedical settings \citep{xiong2024benchmarking, liu2024lost}. Retrieval can also introduce new failure modes. ClashEval shows that models can be led astray by incorrect retrieved context, even when it conflicts with the question \citep{wu2024clasheval}. Recent medical RAG methods aim to improve reliability under imperfect retrieval, for example by training models to cite supporting evidence and by evaluating failure cases explicitly \citep{sohn2024rag2, barnett2024rag}.
+\paragraph{Retrieval and Context Quality.}
+Retrieval-Augmented Generation (RAG) augments a model with external documents at inference time. In medicine, benchmarking work finds large variation in RAG performance across retrievers and corpora, with a pronounced ``lost-in-the-middle'' effect in biomedical settings~\cite{xiong2024benchmarking,liu2024lost}. Retrieval can also introduce new failure modes: ClashEval shows that models can be led astray by incorrect retrieved context~\cite{wu2024clasheval}, and recent medical RAG methods aim to improve reliability under imperfect retrieval~\cite{sohn2024rag2,barnett2024rag}.
 
-\paragraph{Summary.} Our work complements prior studies by focusing on a single medical model family and quantifying how concrete prompt and context variations affect both accuracy and bias, rather than reporting only peak performance under one prompt choice.
-
+%% ================================================================
 \section{Methods}
 
 \subsection{Models and Datasets}
 
-We evaluate MedGemma-4B, the 4-billion parameter instruction-tuned variant at bfloat16 precision, and MedGemma-27B, the 27-billion parameter model requiring full bfloat16 precision on 80GB A100 GPUs. Initial experiments with 4-bit quantization on the 27B model produced NaN logits---a notable finding suggesting that quantization techniques validated on general models may not transfer to medical-specialist architectures.
+We evaluate MedGemma-4B, the 4-billion parameter instruction-tuned variant at bfloat16 precision, and MedGemma-27B, the 27-billion parameter model at full bfloat16 precision on 80\,GB A100 GPUs.
 
-We use two standard medical QA benchmarks. MedMCQA \citep{pal2022medmcqa} contains questions from Indian medical entrance examinations across 21 subjects; we use the 4,183-question validation split. PubMedQA \citep{jin2019pubmedqa} contains research questions derived from PubMed titles that must be answered using abstracts; we use the 1,000-question labeled subset.
+We use two standard medical QA benchmarks. MedMCQA~\cite{pal2022medmcqa} contains questions from Indian medical entrance examinations across 21 subjects; we use the 4,183-question validation split. PubMedQA~\cite{jin2019pubmedqa} contains research questions derived from PubMed titles that must be answered using abstracts; we use the 1,000-question labeled subset.
 
 \subsection{Inference Protocol}
 
-All experiments use a frozen inference protocol for reproducibility. Deterministic experiments use greedy decoding (temperature~$=0$, top-$p=1.0$, top-$k=0$, \texttt{do\_sample=False}) with a maximum of 256 new tokens. Self-consistency experiments use temperature~$=0.7$, top-$p=0.95$, top-$k=50$ with sampling enabled. All runs use the default system prompt and constrain outputs to the valid answer set (A--D for MedMCQA; yes/no/maybe for PubMedQA). Answers are extracted via regex; unparseable outputs are scored as incorrect. Where randomized perturbations are involved, we report results over multiple seeds (42, 123, 456) with mean and 95\% confidence intervals.
+All experiments use a frozen inference protocol for reproducibility. Table~\ref{tab:inference} summarizes the two configurations.
+
+\begin{table}[t]
+\centering
+\caption{Frozen inference parameters for all experiments.}
+\label{tab:inference}
+\begin{tabular}{lccp{3.8cm}}
+\toprule
+\textbf{Parameter} & \textbf{Determ.} & \textbf{Self-Cons.} & \textbf{Rationale} \\
+\midrule
+Temperature & 0.0 & 0.7 & Greedy for reproducibility; 0.7 for diverse reasoning paths \\
+Top-$p$ & 1.0 & 0.95 & No nucleus filtering for greedy; mild filtering for sampling \\
+Top-$k$ & 0 & 50 & Disabled for greedy; limits sampling to top 50 tokens \\
+\texttt{do\_sample} & False & True & Greedy decoding vs.\ stochastic sampling \\
+\texttt{max\_new\_tokens} & 256 & 256 & Sufficient for CoT reasoning while bounding cost \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+All runs use the default system prompt and constrain outputs to the valid answer set (A through D for MedMCQA; yes/no/maybe for PubMedQA). We extract answers via regex; unparseable outputs are scored as incorrect. Where randomized perturbations are involved, we report results over multiple seeds (42, 123, 456) with mean and 95\% confidence intervals.
+
+\subsection{Experimental Overview}
+
+Table~\ref{tab:experiment_overview} summarizes the four experiments, their datasets, condition counts, and the core question each one addresses. Detailed descriptions follow below.
+
+\begin{table}[t]
+\centering
+\caption{Overview of the four experiments in our evaluation.}
+\label{tab:experiment_overview}
+\begin{tabular}{clp{2.2cm}cp{3.4cm}}
+\toprule
+\textbf{Exp.} & \textbf{Name} & \textbf{Dataset} & \textbf{Conds.} & \textbf{Core Question} \\
+\midrule
+1 & Prompt Ablation & MedMCQA (4,183) & 10 & Do CoT and few-shot help or hurt? \\
+2 & Option Order & MedMCQA (4,183) & 5 $\times$ 3 seeds & Does shuffling options change the answer? \\
+3 & Evidence Cond. & PubMedQA (1,000) & 11 & How does context truncation affect accuracy? \\
+4 & Robustness Basel. & MedMCQA (4,183) & 3 methods & Can alternative scoring mitigate fragility? \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \subsection{Experimental Conditions}
 
-\paragraph{Experiment 1: Prompt Ablation.} We test ten prompting strategies on MedMCQA. Five \textit{core} conditions vary the prompting paradigm: (1)~zero-shot direct; (2)~zero-shot chain-of-thought (CoT); (3)~few-shot direct with three curated examples; (4)~few-shot CoT with three curated examples; and (5)~answer-only (minimal prompt). Five additional conditions probe few-shot sensitivity: (6)~random selection from the training set; (7)~label-balanced selection (equal A/B/C/D representation); (8)~subject-matched selection (same medical specialty as the test item); (9--10)~two alternative orderings of the curated examples to test order sensitivity.
+\paragraph{Experiment 1: Prompt Ablation.}
+We test ten prompting strategies on MedMCQA. Five \textit{core} conditions vary the prompting approach: (1)~zero-shot direct; (2)~zero-shot CoT; (3)~few-shot direct with three curated examples; (4)~few-shot CoT with three curated examples; and (5)~answer-only (minimal prompt). Five additional conditions probe few-shot sensitivity: (6)~random selection from the training set; (7)~label-balanced selection (equal A/B/C/D representation); (8)~subject-matched selection (same medical specialty as the test item); and (9--10)~two alternative orderings of the curated examples to test order effects.
 
-\paragraph{Experiment 2: Option Order Sensitivity.} We apply four transformations to each MedMCQA question: random shuffle, rotate-1 (cyclic shift by one), rotate-2 (shift by two), and distractor swap (exchange incorrect options while preserving correct answer position). We measure the flip rate---how often the model changes its answer when options are reordered. To quantify variance, we repeat the experiment across three random seeds and report mean accuracy and flip rate with 95\% confidence intervals.
+\paragraph{Experiment 2: Option Order Sensitivity.}
+We apply four transformations to each MedMCQA question: random shuffle, rotate-1 (cyclic shift by one), rotate-2 (shift by two), and distractor swap (exchange incorrect options while preserving correct answer position). We measure the flip rate, defined as the proportion of questions where the model changes its answer when options are reordered. To quantify variance, we repeat the experiment across three random seeds and report mean accuracy and flip rate with 95\% confidence intervals.
 
-\paragraph{Experiment 3: Evidence Conditioning.} On PubMedQA, we vary context presentation across eleven conditions. Six \textit{core} conditions test context completeness: question-only (no context), full abstract, front-truncated 50\%, front-truncated 25\%, background-only (introduction sentences), and results-only (conclusion sentences). Five additional conditions test truncation strategy: back-truncated 50\% (keeping the final half), middle-truncated 50\% (keeping the central portion), sentence-boundary truncation at 50\%, and salient-sentence extraction retaining the top-5 and top-3 sentences ranked by non-stopword overlap with the question.
+\paragraph{Experiment 3: Evidence Conditioning.}
+On PubMedQA, we vary context presentation across eleven conditions. Six \textit{core} conditions test context completeness: question-only (no context), full abstract, front-truncated 50\%, front-truncated 25\%, background-only (introduction sentences), and results-only (conclusion sentences). Five additional conditions test truncation strategy: back-truncated 50\% (keeping the final half), middle-truncated 50\% (keeping the central portion), sentence-boundary truncation at 50\%, and salient-sentence extraction retaining the top-5 and top-3 sentences ranked by non-stopword overlap with the question.
 
-\paragraph{Experiment 4: Robustness Baselines.} We evaluate three complementary scoring and aggregation methods on MedMCQA. \textit{Cloze scoring} bypasses free-text generation: for each question we compute log-probabilities of the four option tokens (A--D) at the next-token position and select the highest. \textit{Permutation voting} runs greedy inference on multiple option orderings and takes a majority vote over inverse-mapped predictions. \textit{CoT self-consistency} samples $N$ chain-of-thought responses at temperature 0.7 and takes a majority vote, testing whether sampling diversity can overcome single-sample fragility.
+\paragraph{Experiment 4: Robustness Baselines.}
+We evaluate three complementary scoring and aggregation methods on MedMCQA. \textit{Cloze scoring} bypasses free-text generation entirely: for each question we compute log-probabilities of the four option tokens (A through D) at the next-token position and select the highest. \textit{Permutation voting} runs greedy inference on multiple option orderings and takes a majority vote over inverse-mapped predictions. \textit{CoT self-consistency} samples $N$ CoT responses at temperature 0.7 and takes a majority vote, testing whether sampling diversity can overcome single-sample fragility.
 
 \subsection{Metrics}
 
-We report accuracy with 95\% Wilson score confidence intervals. Position bias is computed as the mean absolute deviation between the predicted and ground-truth answer distributions across positions A--D. For option-order experiments, we compute the flip rate: the proportion of questions where the model's prediction changes under reordering. We additionally report:
-\begin{itemize}
-    \item \textbf{CKLD} (Chi-squared KL Divergence): $\sum_i (O_i - E_i)^2 / E_i$, where $O_i$ and $E_i$ are observed and expected counts per position, quantifying departure from uniform answering;
-    \item \textbf{RStd} (Relative Standard Deviation): $\sigma / \mu$ of per-position accuracies, capturing how unevenly performance is distributed across answer positions;
-    \item \textbf{Per-position accuracy}: accuracy conditioned on the correct answer being A, B, C, or D, revealing position-dependent competence;
-    \item \textbf{McNemar's test}: paired significance testing between conditions, with Bonferroni correction for multiple comparisons.
-\end{itemize}
+We report accuracy with 95\% Wilson score confidence intervals. Position bias is computed as a prediction frequency bias: $\text{Bias} = \frac{1}{4} \sum_{i \in \{A,B,C,D\}} |P_{\text{pred}}(i) - P_{\text{truth}}(i)|$, where $P_{\text{pred}}(i)$ is the fraction of model predictions for position $i$ and $P_{\text{truth}}(i)$ is the fraction of correct answers at position $i$. A score of 0 indicates the model's answer distribution perfectly matches the ground truth; higher values indicate systematic over- or under-selection of certain positions. For option-order experiments, we compute the flip rate: the proportion of questions where the model's prediction changes under reordering. Table~\ref{tab:metrics_summary} describes our additional metrics.
 
+\begin{table}[t]
+\centering
+\caption{Additional metrics used in our evaluation.}
+\label{tab:metrics_summary}
+\begin{tabular}{lp{7.2cm}}
+\toprule
+\textbf{Metric} & \textbf{Definition} \\
+\midrule
+CKLD & $\sum_i (O_i - E_i)^2 / E_i$, where $O_i$ and $E_i$ are observed and expected counts per position; quantifies departure from uniform answering \\
+RStd & $\sigma / \mu$ of per-position accuracies; captures how unevenly performance is distributed across answer positions \\
+Per-position acc. & Accuracy conditioned on the correct answer being A, B, C, or D; reveals position-dependent competence \\
+McNemar's test & Paired significance testing between conditions, with Bonferroni correction for multiple comparisons \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+%% ================================================================
 \section{Results}
 
 \subsection{Prompt Ablation}
 
-Table~\ref{tab:prompt_ablation} shows accuracy across prompting strategies for the five core conditions. Zero-shot direct achieves the highest accuracy at 47.6\%, while chain-of-thought \textit{reduces} accuracy by 5.7 percentage points. Few-shot examples cause an even larger degradation of 11.9\%, while simultaneously increasing position bias from 0.137 to 0.472---indicating the model learns spurious patterns from examples rather than useful formats.
+Table~\ref{tab:prompt_ablation} shows accuracy across prompting strategies for the five core conditions. Zero-shot direct achieves the highest accuracy at 47.6\%, while CoT \textit{reduces} accuracy by 5.7 percentage points (McNemar's test, $p < 0.001$). Few-shot examples cause an even larger degradation of 11.9\% ($p < 0.001$), while simultaneously increasing position bias from 0.137 to 0.472 (measured as prediction frequency bias, i.e., the mean absolute deviation between predicted and ground-truth answer distributions; see Section~3.5). All pairwise differences between zero-shot direct and other conditions remain statistically significant after Bonferroni correction ($p < 0.001$, McNemar's test). The model picks up spurious patterns from in-context examples rather than useful output formats.
 
-\begin{table}[h]
+\begin{table}[t]
 \centering
-\caption{Prompt ablation results on MedMCQA (n=4,183). Random baseline is 25\%.}
+\caption{Prompt ablation results on MedMCQA ($n{=}4{,}183$). Random baseline is 25\%.}
 \label{tab:prompt_ablation}
 \begin{tabular}{lccc}
 \toprule
-\textbf{Condition} & \textbf{Accuracy} & \textbf{95\% CI} & \textbf{Pos. Bias} \\
+\textbf{Condition} & \textbf{Accuracy} & \textbf{95\% CI} & \textbf{Pos.\ Bias} \\
 \midrule
-Zero-shot direct & 47.6\% & [46.1\%, 49.1\%] & 0.137 \\
-Zero-shot CoT & 41.9\% & [40.4\%, 43.3\%] & 0.275 \\
-Few-shot direct (curated) & 35.7\% & [34.3\%, 37.0\%] & 0.472 \\
-Few-shot CoT (curated) & 40.8\% & [39.4\%, 42.3\%] & 0.413 \\
-Answer-only & 43.0\% & [41.5\%, 44.6\%] & 0.096 \\
-\midrule
-\multicolumn{4}{l}{\textit{Few-shot selection sensitivity (all 3-shot direct):}} \\
-Random selection & \multicolumn{3}{c}{\textit{Pending---experiment in progress}} \\
-Label-balanced & \multicolumn{3}{c}{\textit{Pending}} \\
-Subject-matched & \multicolumn{3}{c}{\textit{Pending}} \\
-Order variant 2 & \multicolumn{3}{c}{\textit{Pending}} \\
-Order variant 3 & \multicolumn{3}{c}{\textit{Pending}} \\
+Zero-shot direct & 47.6\% & [46.1, 49.1] & 0.137 \\
+Zero-shot CoT & 41.9\% & [40.4, 43.3] & 0.275 \\
+Few-shot direct (curated) & 35.7\% & [34.3, 37.0] & 0.472 \\
+Few-shot CoT (curated) & 40.8\% & [39.4, 42.3] & 0.413 \\
+Answer-only & 43.0\% & [41.5, 44.6] & 0.096 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\begin{figure}[h]
+\subsection{Qualitative Examples}
+
+Table~\ref{tab:sample_responses} shows representative model outputs that illustrate our key findings. The first example shows CoT backfiring: direct prompting answers ``D'' (Candidiasis) correctly, but CoT prompting starts analyzing each option, notes that tuberculosis is ``rare in children,'' and yet ultimately selects A (Tuberculosis). The second example shows an option-order flip: the model answers ``B'' (Anterior ethmoidal artery) under the original ordering, correctly identifying a non-branch of the external carotid. When options are shuffled, the content previously at position B moves to position A, but the model again answers ``B,'' now pointing to a different option entirely. It follows position, not content.
+
+\begin{table}[t]
 \centering
-\includegraphics[width=0.9\textwidth]{figures/fig1_prompt_ablation.pdf}
-\caption{MedGemma-4B accuracy across prompt strategies. Zero-shot direct outperforms all other strategies including chain-of-thought ($-$5.7\%) and few-shot ($-$11.9\%).}
-\label{fig:prompt_ablation}
-\end{figure}
+\caption{Sample model responses illustrating key failure modes. All examples from MedGemma-4B on MedMCQA. Prompts and outputs are reproduced verbatim.}
+\label{tab:sample_responses}
+\small
+\begin{tabular}{p{1.8cm}p{8.7cm}}
+\toprule
+\multicolumn{2}{l}{\textbf{Example 1: CoT backfires} (Dental, correct answer: D)} \\
+\midrule
+Prompt (direct) & \texttt{Question: In a 6-month-old child, thick curd like white patch appears on the buccal mucosa. On rubbing it leaves an erythematous patch. Most likely diagnosis is:} \newline \texttt{Options: A) Tuberculosis\; B) Lichen planus\; C) Lupus erythematous\; D) Candidiasis} \newline \texttt{Answer with a single letter (A, B, C, or D).} \\
+\addlinespace
+Direct output & \texttt{D} \quad $\checkmark$ \\
+\midrule
+Prompt (CoT) & \texttt{Question: [same as above]} \newline \texttt{Think through this step-by-step, analyzing each option. Then provide your final answer as a single letter (A, B, C, or D).} \\
+\addlinespace
+CoT output & \texttt{A) Tuberculosis: Oral tuberculosis is rare in children. While it can present with lesions, they are less likely to be the classic "curd-like" appearance.} \newline \texttt{B) Lichen planus: less common in infants. It typically presents with flat-topped}\ldots \textit{(truncated at 256 tokens; selects} \texttt{A}\textit{)} \quad $\times$ \\
+\midrule\midrule
+\multicolumn{2}{l}{\textbf{Example 2: Option order flip} (Anatomy, correct answer: B $\to$ A after shuffle)} \\
+\midrule
+Prompt (orig.) & \texttt{Question: Which of the following are not a branch of external carotid artery in Kiesselbach's plexus.} \newline \texttt{Options: A) Sphenopalatine artery\; B) Anterior ethmoidal artery\; C) Greater palatine artery\; D) Septal branch of superior labial artery} \newline \texttt{Answer with a single letter (A, B, C, or D).} \\
+\addlinespace
+Output (orig.) & \texttt{B} \quad $\checkmark$ \quad (Anterior ethmoidal is correct; it is not an external carotid branch) \\
+\midrule
+Prompt (shuf.) & \texttt{Question: [same as above]} \newline \texttt{Options: A) Anterior ethmoidal artery\; B) Septal branch of superior labial artery\; C) Sphenopalatine artery\; D) Greater palatine artery} \\
+\addlinespace
+Output (shuf.) & \texttt{B} \quad $\times$ \quad (The correct content moved to position A, but the model still picks B) \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \subsection{Option Order Sensitivity}
 
-Table~\ref{tab:option_order} reveals extreme sensitivity to option ordering. The mean flip rate is 59.1\%---the model changes its answer more often than not when options are shuffled. Rotation perturbations cause the largest accuracy drops (up to 27.4\%), while distractor swaps show smaller impact ($-$8.9\%), confirming that position rather than distractor content drives fragility.
+Table~\ref{tab:option_order} reveals extreme sensitivity to option ordering. The mean flip rate is 59.1\%; the model changes its answer more often than not when options are shuffled. Rotation perturbations cause the largest accuracy drops (up to 27.4\%), while distractor swaps show smaller impact ($-$8.9\%). This confirms that position rather than distractor content drives the fragility.
 
-\begin{table}[h]
+\begin{table}[t]
 \centering
-\caption{Option order sensitivity on MedMCQA (n=4,183). Random baseline is 25\%. Values shown for seed 42; multi-seed means and CIs pending.}
+\caption{Option order sensitivity on MedMCQA ($n{=}4{,}183$). All intervals are 95\% Wilson score CIs. Seed 42.}
 \label{tab:option_order}
-\begin{tabular}{lccc}
+\begin{tabular}{lcccc}
 \toprule
-\textbf{Perturbation} & \textbf{Accuracy} & \textbf{Drop} & \textbf{Flip Rate} \\
+\textbf{Perturbation} & \textbf{Accuracy} & \textbf{95\% CI} & \textbf{Drop} & \textbf{Flip Rate} \\
 \midrule
-Original & 47.6\% & --- & --- \\
-Random shuffle & 27.3\% & $-$20.3\% & 57.8\% \\
-Rotate-1 & 20.2\% & $-$27.4\% & 72.9\% \\
-Rotate-2 & 21.9\% & $-$25.7\% & 69.7\% \\
-Distractor swap & 47.6\% & $\phantom{-}$0.0\% & 36.1\% \\
+Original & 47.6\% & [46.1, 49.1] & -- & -- \\
+Random shuffle & 27.3\% & [26.0, 28.7] & $-$20.3\% & 57.8\% \\
+Rotate-1 & 20.2\% & [19.0, 21.5] & $-$27.4\% & 72.9\% \\
+Rotate-2 & 21.9\% & [20.7, 23.2] & $-$25.7\% & 69.7\% \\
+Distractor swap & 47.6\% & [46.1, 49.1] & $\phantom{-}$0.0\% & 36.1\% \\
 \midrule
-\textbf{Mean} & 29.2\% & $-$18.4\% & 59.1\% \\
+\textbf{Mean} & 29.2\% & -- & $-$18.4\% & 59.1\% \\
 \bottomrule
-\multicolumn{4}{l}{\textit{Multi-seed (3 seeds) means $\pm$ CI: pending for both 4B and 27B.}} \\
 \end{tabular}
 \end{table}
 
-\begin{figure}[h]
-\centering
-\includegraphics[width=0.9\textwidth]{figures/fig4_option_order.pdf}
-\caption{Left: Accuracy drops substantially when options are reordered. Right: The model changes its answer 59.1\% of the time when options are shuffled.}
-\label{fig:option_order}
-\end{figure}
-
 \subsection{Evidence Conditioning}
 
-Table~\ref{tab:evidence} shows context presentation substantially affects PubMedQA performance. Most critically, front-truncated context performs \textit{worse} than no context: front-truncation at 50\% yields 13.8\% (4B) and 23.4\% (27B), far below question-only baselines of 34.5\% and 31.0\%. This indicates that naively truncating from the front actively misleads the model.
+Table~\ref{tab:evidence} shows that context presentation substantially affects PubMedQA performance. Most critically, front-truncated context performs \textit{worse} than no context: front-truncation at 50\% yields 13.8\% (4B) and 23.4\% (27B), far below question-only baselines of 34.5\% and 31.0\%. Naively truncating from the front actively misleads the model.
 
-However, our expanded truncation analysis reveals that \textit{how} context is truncated matters as much as \textit{how much} is removed. Back-truncation at 50\% preserves 97\% of full-context accuracy (44.5\% vs.\ 45.8\%), while front-truncation at the same ratio destroys it (13.8\%). This asymmetry suggests the model relies heavily on opening context to orient its reasoning; removing the beginning causes catastrophic failure, while removing the end is largely harmless.
+Our expanded truncation analysis reveals that \textit{how} context is truncated matters as much as \textit{how much} is removed. Back-truncation at 50\% preserves 97\% of full-context accuracy (44.5\% vs.\ 45.8\%), while front-truncation at the same ratio destroys it (13.8\%). The model relies on opening context for orientation; removing the beginning causes catastrophic failure, while removing the end is largely harmless.
 
-Salient-sentence extraction offers a practical middle ground: selecting the top-5 sentences by question overlap achieves 40.1\%, retaining 88\% of full-context accuracy with roughly half the tokens. Sentence-boundary truncation (30.3\%) outperforms naive word-level front-truncation (13.8\%) at the same 50\% ratio, confirming that respecting linguistic boundaries matters for downstream comprehension.
+Salient-sentence extraction offers a practical middle ground: selecting the top-5 sentences by question overlap achieves 40.1\%, retaining 88\% of full-context accuracy with roughly half the tokens.
 
-\begin{table}[h]
+\begin{table}[t]
 \centering
-\caption{Evidence conditioning on PubMedQA (n=1,000). Random baseline is 33.3\%. 27B results for new conditions pending.}
+\caption{Evidence conditioning on PubMedQA ($n{=}1{,}000$). Random baseline: 33.3\%. 95\% Wilson score CIs are $\pm$2.0--3.1\,pp for all conditions; see Appendix~\ref{app:trunc} for detailed intervals.}
 \label{tab:evidence}
 \begin{tabular}{lccl}
 \toprule
@@ -171,220 +253,184 @@ Salient-sentence extraction offers a practical middle ground: selecting the top-
 \multicolumn{4}{l}{\textit{Core conditions:}} \\
 Question only & 34.5\% & 31.0\% & No context \\
 Full context & 45.8\% & 38.2\% & Complete abstract \\
-Front-truncated 50\% & 13.8\% & 23.4\% & First half of words \\
-Front-truncated 25\% & 13.7\% & 18.6\% & First quarter of words \\
-Background only & 28.9\% & 19.8\% & Introduction sentences \\
-Results only & 41.9\% & \textbf{40.0\%} & Conclusion sentences \\
+Front-trunc.\ 50\% & 13.8\% & 23.4\% & First half of words \\
+Front-trunc.\ 25\% & 13.7\% & 18.6\% & First quarter \\
+Background only & 28.9\% & 19.8\% & Intro.\ sentences \\
+Results only & 41.9\% & \textbf{40.0\%} & Concl.\ sentences \\
 \midrule
-\multicolumn{4}{l}{\textit{Expanded truncation strategies (4B complete, 27B pending):}} \\
-Back-truncated 50\% & \textbf{44.5\%} & \textit{---} & Last half of words \\
-Middle-truncated 50\% & 33.9\% & \textit{---} & Central portion \\
-Sentence-trunc 50\% & 30.3\% & \textit{---} & First half by sentence boundary \\
-Salient top-5 & 40.1\% & \textit{---} & Top 5 sentences by question overlap \\
-Salient top-3 & 36.4\% & \textit{---} & Top 3 sentences by question overlap \\
+\multicolumn{4}{l}{\textit{Expanded truncation strategies (4B):}} \\
+Back-trunc.\ 50\% & \textbf{44.5\%} & \textit{--} & Last half of words \\
+Middle-trunc.\ 50\% & 33.9\% & \textit{--} & Central portion \\
+Sent.-trunc.\ 50\% & 30.3\% & \textit{--} & Sentence boundary \\
+Salient top-5 & 40.1\% & \textit{--} & By question overlap \\
+Salient top-3 & 36.4\% & \textit{--} & By question overlap \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\begin{figure}[h]
-\centering
-\includegraphics[width=0.9\textwidth]{figures/fig3_evidence_conditioning.pdf}
-\caption{Evidence conditioning results. Front-truncation destroys accuracy, but back-truncation preserves it. Salient extraction retains 88\% of full-context performance.}
-\label{fig:evidence}
-\end{figure}
-
 \subsection{Robustness Baselines}
 
-Table~\ref{tab:baselines} compares the three robustness-oriented methods against the best single-prompt strategy (zero-shot direct at 47.6\%).
+Table~\ref{tab:baselines} compares three robustness-oriented methods against zero-shot direct prompting (47.6\%).
 
-\textbf{Cloze scoring} achieves 51.8\% [50.3\%, 53.3\%] on 4B and 64.5\% [61.4\%, 67.1\%] on 27B---the highest accuracy of any method tested for both model sizes. The 27B result is particularly striking: cloze scoring recovers 26.3 points over 27B's full-context evidence conditioning (38.2\%) and 17.0 points over 4B's best prompting result (47.6\%). By scoring option tokens via log-probabilities rather than parsing free-text output, cloze scoring sidesteps the answer-extraction problem entirely. Position bias scores are 0.013 (4B) and 0.054 (27B)---an order of magnitude lower than zero-shot direct (0.137)---indicating near-uniform treatment of answer positions.
+\textbf{Cloze scoring} achieves 51.8\% [50.3, 53.3] on 4B and 64.5\% [61.4, 67.1] on 27B, the highest accuracy of any method we tested for both model sizes. The 27B result is striking: cloze scoring recovers 26.3 points over 27B's full-context evidence conditioning (38.2\%) and 17.0 points over 4B's best prompting result (47.6\%). Position bias scores are 0.013 (4B) and 0.054 (27B), an order of magnitude lower than zero-shot direct (0.137).
 
-\textbf{Permutation voting} (4 orderings, $n=1{,}000$) achieves 49.0\% [46.0\%, 52.1\%] aggregated accuracy, a 4 percentage point improvement over the mean per-permutation accuracy of 45.1\%. The agreement rate across orderings is 70.0\% ($\sigma=22.1\%$), meaning models agree on roughly two-thirds of questions, with disagreement identifying items where position bias drives predictions.
+\textbf{Permutation voting} (4 orderings, $n{=}1{,}000$) achieves 49.0\% [46.0, 52.1] aggregated accuracy, a 4-point improvement over the mean per-permutation accuracy of 45.1\%. The agreement rate across orderings is 70.0\%, with disagreement identifying items where position bias drives predictions.
 
-\textbf{CoT self-consistency} results are pending (experiment in progress with $N \in \{3, 5\}$, $n=500$).
-
-\begin{table}[h]
+\begin{table}[t]
 \centering
-\caption{Robustness baselines on MedMCQA. Cloze scoring uses $n=4{,}183$ (4B) or $n=1{,}000$ (27B); permutation vote and CoT SC use $n=1{,}000$.}
+\caption{Robustness baselines on MedMCQA. Cloze scoring uses $n{=}4{,}183$ (4B) or $n{=}1{,}000$ (27B); permutation vote uses $n{=}1{,}000$.}
 \label{tab:baselines}
 \begin{tabular}{lcccc}
 \toprule
 \textbf{Method} & \multicolumn{2}{c}{\textbf{MedGemma-4B}} & \multicolumn{2}{c}{\textbf{MedGemma-27B}} \\
 \cmidrule(lr){2-3} \cmidrule(lr){4-5}
- & Accuracy & Pos.\ Bias & Accuracy & Pos.\ Bias \\
+ & Acc. & Pos.\ Bias & Acc. & Pos.\ Bias \\
 \midrule
-Zero-shot direct (ref.) & 47.6\% & 0.137 & \multicolumn{2}{c}{\textit{Pending}} \\
+Zero-shot direct (ref.) & 47.6\% & 0.137 & -- & -- \\
 \midrule
 Cloze scoring & 51.8\% & 0.013 & \textbf{64.5\%} & 0.054 \\
-Permutation vote ($K\!=\!4$) & 49.0\% & --- & \multicolumn{2}{c}{\textit{Running}} \\
-CoT self-consistency & \multicolumn{2}{c}{\textit{Running}} & \multicolumn{2}{c}{---} \\
+Permutation vote ($K{=}4$) & 49.0\% & -- & -- & -- \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-The cloze result is notable: by bypassing generation entirely and reading the model's internal token preferences, we recover 4.2 points of accuracy that are lost to the generation and parsing pipeline. This suggests that a significant fraction of MedGemma's apparent ``errors'' under standard prompting are not errors of knowledge but of output formatting.
+The cloze result deserves attention. By bypassing generation entirely and reading the model's internal token preferences, we recover 4.2 points of accuracy that are lost to the generation and parsing pipeline. This suggests that a significant fraction of MedGemma's apparent ``errors'' under standard prompting are not errors of knowledge but of output formatting.
 
+%% ================================================================
 \section{Discussion}
 
 \subsection{Why Chain-of-Thought Hurts}
 
-The 5.7\% accuracy drop from CoT prompting aligns with recent findings that deliberation can reduce performance on certain tasks \citep{sprague2024mind}. MedGemma was trained extensively on medical text and may have internalized domain reasoning patterns; forcing explicit step-by-step logic may override these learned patterns with less reliable deliberation.
+The 5.7\% accuracy drop from CoT prompting aligns with recent findings that deliberation can reduce performance on certain tasks~\cite{liu2024mindyourstep}. MedGemma was trained extensively on medical text and may have internalized domain reasoning patterns. Forcing explicit step-by-step logic may override these learned patterns with less reliable deliberation.
 
-Case-level analysis reveals the mechanism: CoT prompting changed answers on 1,262 of 4,183 questions, hurting 750 (direct correct, CoT wrong) while helping only 512---a net loss of 238 questions. The predominant failure pattern involves verbose reasoning (90.7\% exceeded 500 characters) where longer chains create opportunities for errors to compound. We also observed self-contradiction (25.6\% contained hedge words introducing conflicting logic) and confident wrong conclusions (11.1\% stated ``therefore'' before incorrect answers).
+Case-level analysis reveals the mechanism. CoT prompting changed answers on 1,262 of 4,183 questions, hurting 750 (direct correct, CoT wrong) while helping only 512, a net loss of 238 questions. The predominant failure pattern involves verbose reasoning (90.7\% exceeded 500 characters) where longer chains create opportunities for errors to compound. We also observed self-contradiction in 25.6\% of cases and confident wrong conclusions in 11.1\%.
 
-The characteristic failure mode: the model correctly identifies relevant medical concepts early in reasoning, considers alternatives, then talks itself into the wrong answer. In one case involving organophosphate poisoning, CoT correctly identified the condition and atropine's role as antidote, then continued deliberating and selected neostigmine---which would worsen the condition.
+The characteristic failure mode works like this: the model correctly identifies relevant medical concepts early in its reasoning, considers alternatives, then talks itself into the wrong answer. In one case involving organophosphate poisoning, CoT correctly identified the condition and atropine's role as antidote, then continued deliberating and selected neostigmine, which would worsen the condition.
 
 \subsection{The 59\% Flip Rate Problem}
 
-MedGemma changes its answer 59.1\% of the time when options are shuffled, far exceeding random noise. The maximum flip rate of 72.9\% for certain perturbations means that for nearly three-quarters of questions, answers depend more on option position than content. This magnitude exceeds typical findings \citep{zheng2024llm}, suggesting medical-specialist training may not mitigate---and could exacerbate---position bias.
+MedGemma changes its answer 59.1\% of the time when options are shuffled, far exceeding random noise. The maximum flip rate of 72.9\% for rotation perturbations means that for nearly three-quarters of questions, answers depend more on option position than content. This magnitude exceeds typical findings~\cite{zheng2024llm}, suggesting medical-specialist training may not mitigate position bias and could even exacerbate it.
 
-For clinical applications, this fragility is unacceptable. A diagnostic support system that changes recommendations based on option ordering provides no reliable signal to clinicians and undermines the premise of using AI to assist medical decision-making.
+For clinical applications, this fragility is unacceptable. A diagnostic support system that changes recommendations based on option ordering provides no reliable signal to clinicians.
 
 \subsection{Truncation Direction Matters More Than Amount}
 
-Front-truncating context to 50\% yields 13.8\% accuracy while no context achieves 34.5\%---a 20.7 point gap showing that partial context actively misleads. However, our expanded analysis reveals this is specifically a \textit{front-truncation} problem: back-truncation at the same 50\% ratio preserves 44.5\% accuracy, just 1.3 points below full context. The model appears to rely on opening context for orientation; once it has read the beginning of an abstract, losing the tail is relatively harmless.
+Front-truncating context to 50\% yields 13.8\% accuracy while no context achieves 34.5\%, a 20.7-point gap showing that partial context actively misleads. But our expanded analysis reveals this is specifically a \textit{front-truncation} problem: back-truncation at the same 50\% ratio preserves 44.5\% accuracy, just 1.3 points below full context. The model relies on opening context for orientation; once it has read the beginning of an abstract, losing the tail is relatively harmless.
 
-This asymmetry has direct implications for retrieval-augmented systems in medicine. Prior work shows that models can be led astray by incorrect retrieved evidence \citep{wu2024clasheval, barnett2024rag}. Our results add nuance: the \textit{position} of missing information matters as much as its quantity. RAG systems that truncate passages to fit context windows should truncate from the end, not the beginning. Better still, salient-sentence extraction (40.1\% with top-5 sentences) provides a principled compression that retains 88\% of full-context accuracy at roughly half the token cost.
+This asymmetry has direct implications for RAG systems in medicine. Prior work shows that models can be led astray by incorrect retrieved evidence~\cite{wu2024clasheval,barnett2024rag}. Our results add specificity: the \textit{position} of missing information matters as much as its quantity. RAG systems that truncate passages to fit context windows should truncate from the end, not the beginning. Better still, salient-sentence extraction (40.1\% with top-5 sentences) provides a principled compression that retains 88\% of full-context accuracy at roughly half the token cost.
 
-Results-only context (41.9\% for 4B, 40.0\% for 27B) nearly matches or exceeds full context, while background-only achieves just 28.9\%/19.8\%. Both models benefit from conclusions rather than methodological background, suggesting RAG systems should prioritize high-information-density content.
+Results-only context (41.9\% for 4B, 40.0\% for 27B) nearly matches or exceeds full context, while background-only achieves just 28.9\%/19.8\%. Both models benefit from conclusions rather than methodological background, suggesting RAG systems should prioritize high-information-density content over exhaustive retrieval.
 
 \subsection{Scale and Robustness}
 
-MedGemma-27B underperforms 4B on generative evidence conditioning (38.2\% vs 45.8\% with full context), apparently demonstrating that medical benchmark performance does not scale with model size. However, our cloze scoring results invert this conclusion: 27B achieves 64.5\% via log-probabilities, far exceeding 4B's 51.8\%. The 27B model \textit{does} encode substantially more medical knowledge than 4B, but its generation pipeline fails to express it. This finding reframes the ``scale doesn't help'' narrative: scale helps knowledge acquisition, but the generation--parsing pipeline becomes the bottleneck at larger sizes.
+MedGemma-27B underperforms 4B on generative evidence conditioning (38.2\% vs 45.8\% with full context), apparently demonstrating that medical benchmark performance does not scale with model size. But our cloze scoring results invert this conclusion: 27B achieves 64.5\% via log-probabilities, far exceeding 4B's 51.8\%. The 27B model \textit{does} encode substantially more medical knowledge than 4B; its generation pipeline simply fails to express it. This finding reframes the ``scale doesn't help'' narrative. Scale helps knowledge acquisition, but the generation-parsing pipeline becomes the bottleneck at larger sizes.
 
-On evidence conditioning, 27B shows a ``less is more'' pattern: results-only context (40.0\%) exceeds full-context accuracy (38.2\%), suggesting larger models may be more susceptible to distraction from verbose context but respond well to concentrated information. For deployment, this implies larger models may require selective retrieval strategies and non-generative answer extraction.
+On evidence conditioning, 27B shows a ``less is more'' pattern: results-only context (40.0\%) exceeds full-context accuracy (38.2\%), suggesting larger models may be more susceptible to distraction from verbose context but respond well to concentrated information.
 
 \subsection{Cloze Scoring as a Diagnostic}
 
-The advantage of cloze scoring over zero-shot direct prompting---4.2 points for 4B (51.8\% vs.\ 47.6\%)---is striking because both methods use the same model and the same questions; the only difference is \textit{how} the answer is extracted. The effect is even more dramatic for 27B: cloze scoring achieves 64.5\%, making 27B the best-performing configuration in our entire study when answers are extracted via log-probabilities rather than parsed from generated text. This contrasts sharply with 27B's mediocre generative performance (e.g., 38.2\% on PubMedQA with full context), suggesting that 27B's poor showing in generation-based experiments reflects output formatting failures rather than knowledge deficits.
+The advantage of cloze scoring over zero-shot direct prompting, 4.2 points for 4B (51.8\% vs.\ 47.6\%), is striking because both methods use the same model and the same questions; the only difference is \textit{how} the answer is extracted. The effect is even more dramatic for 27B: cloze scoring achieves 64.5\%, making 27B the best-performing configuration in our entire study when answers are extracted via log-probabilities rather than parsed from generated text.
 
-Two mechanisms likely contribute to the cloze--generation gap: (1)~the generation pipeline adds noise through token-by-token autoregressive sampling and output formatting constraints; and (2)~the answer parser fails on some responses that contain correct reasoning but not a cleanly extractable letter. The near-zero position bias (0.013 for 4B, 0.054 for 27B vs.\ 0.137 for zero-shot direct) further supports this interpretation---the models' internal preferences are far more uniform across positions than their generated text.
+Two mechanisms likely contribute to this gap: (1)~the generation pipeline adds noise through token-by-token autoregressive decoding and output formatting constraints; and (2)~the answer parser fails on some responses that contain correct reasoning but not a cleanly extractable letter. The near-zero position bias (0.013 for 4B, 0.054 for 27B vs.\ 0.137 for zero-shot direct) supports this interpretation; the models' internal preferences are far more uniform across positions than their generated text.
 
-This has practical implications: for applications where only the answer matters (not the reasoning), cloze scoring offers a strictly better extraction method. For applications requiring explainability, the cloze--generation gap can serve as a diagnostic of how much accuracy is lost to the generate--parse pipeline.
+This has practical implications. For applications where only the answer matters (not the reasoning), cloze scoring offers a strictly better extraction method. For applications requiring explainability, the cloze-generation gap can serve as a diagnostic of how much accuracy is lost to the generate-parse pipeline.
 
 \subsection{Permutation Voting Partially Mitigates Position Bias}
 
 Permutation voting improves aggregated accuracy by 4 points over the mean single-ordering accuracy (49.0\% vs.\ 45.1\%), confirming that majority-vote aggregation across orderings can partially cancel position-dependent errors. The 70\% agreement rate identifies a natural partition: questions with high agreement are reliably answered regardless of ordering, while low-agreement questions flag items where the model's answer depends on superficial cues. In a clinical deployment, the agreement rate could serve as a calibrated abstention signal.
 
+\subsection{Generalizability and Clinical Safety}
+
+Our experiments focus on the MedGemma family. Whether these ``backfire'' effects generalize to other domain-specific models, such as BioGPT, BioMistral~\cite{labrak2024biomistral}, or clinical adaptations of Llama, remains an open question. Prior work has documented position bias and CoT sensitivity in general-purpose LLMs~\cite{zheng2024llm,liu2024mindyourstep}, so these failure modes are likely not unique to MedGemma. But the magnitudes we observe (e.g., 59.1\% flip rate, 5.7\% CoT degradation) may well differ across architectures and training regimes. Future multi-model evaluations should test whether domain-specific fine-tuning amplifies or mitigates these effects.
+
+Our evaluation also covers only multiple-choice and yes/no/maybe formats. Real clinical workflows involve free-text reasoning, open-ended differential diagnosis, and structured decision support. The mechanisms we identify, including position bias, verbose reasoning errors, and context truncation sensitivity, are likely to persist in those settings, though they may manifest differently.
+
+Prompt-induced prediction changes are not uniformly benign. Among the 750 questions where CoT flipped a correct answer to an incorrect one, a subset involves high-risk clinical scenarios. In the organophosphate poisoning example, CoT selected a contraindicated drug. We observed multiple cases where prompt choice alone led to selection of contraindicated medications (e.g., neostigmine for organophosphate poisoning, allopurinol during acute gout; see Appendix~\ref{app:cot}). While a systematic clinical severity taxonomy is beyond our scope, these examples demonstrate that prompt-induced errors can be clinically dangerous, not merely statistically inconvenient. They show why robustness testing is essential before any safety-critical deployment.
+
+%% ================================================================
 \section{Conclusion}
 
-\begin{figure}[t]
-\centering
-\includegraphics[width=0.98\textwidth]{figures/fig6_key_findings.pdf}
-\caption{Summary: CoT reduces accuracy 5.7\%; option shuffling causes 59.1\% flip rate; truncated context performs worse than no context.}
-\label{fig:summary}
-\end{figure}
+Our evaluation demonstrates that standard prompt engineering techniques do not reliably transfer to domain-specific medical LLMs. On MedGemma, CoT decreases accuracy by 5.7\% ($p < 0.001$), few-shot examples degrade accuracy by 11.9\% while tripling position bias, option shuffling causes 59.1\% prediction flips, and front-truncated context performs worse than no context at all. Practical mitigations exist: cloze scoring achieves the highest accuracy (51.8\%/64.5\%) with near-zero position bias, back-truncation preserves 97\% of full-context accuracy, and permutation voting recovers 4 points over single-ordering inference.
 
-Our evaluation reveals that standard prompt engineering techniques do not reliably improve---and may actively harm---medical question answering performance. Chain-of-thought decreases accuracy by 5.7\%; few-shot examples decrease accuracy by 11.9\% while tripling position bias; shuffling options causes 59.1\% flip rates; and front-truncated context performs worse than no context. At the same time, we identify practical mitigations: cloze scoring achieves the highest accuracy (51.8\%) with near-zero position bias; back-truncation preserves 97\% of full-context accuracy where front-truncation destroys it; and permutation voting recovers 4 points over single-ordering inference.
+For deployment, we recommend: (1)~default to zero-shot direct prompting or cloze scoring; (2)~test option order sensitivity and use permutation voting with agreement-based abstention; (3)~truncate retrieved context from the end, not the beginning; and (4)~prefer selective high-density retrieval over exhaustive context. The cloze-generation gap suggests that benchmark accuracies reflect the prompt-generate-parse pipeline rather than underlying model knowledge, making rigorous per-use-case validation essential before deployment.
 
-For practitioners deploying medical LLMs, we recommend: (1)~default to zero-shot direct prompting, or cloze scoring where only the answer is needed; (2)~test option order sensitivity before deployment and consider permutation voting, using the agreement rate as an abstention signal; (3)~when truncating retrieved context, truncate from the end---never from the beginning---or use salient-sentence extraction; (4)~for larger models, prefer selective retrieval of high-density information (results sections) over comprehensive retrieval.
-
-The extreme sensitivity to prompt variations raises fundamental questions about what benchmark accuracy measures. The cloze--generation gap in particular suggests that reported accuracies reflect the entire prompt--generate--parse pipeline, not the model's underlying knowledge. Before deploying medical LLMs, rigorous empirical validation on specific use cases is essential---assumed best practices from general-purpose models do not transfer.
-
-\section*{Acknowledgments}
-
+%% ================================================================
+\subsubsection{Acknowledgements.}
 We thank the MedGemma team at Google for releasing open model weights. Experiments were conducted on NVIDIA A100 GPUs.
 
-\bibliographystyle{plainnat}
+%% ================================================================
+\bibliographystyle{splncs04}
 \bibliography{references}
 
+%% ================================================================
+%% SUPPLEMENTARY MATERIAL
+%% ================================================================
 \appendix
 
-\section{Prompt Templates}
+\section{Prompt Templates}\label{app:prompts}
 
-This section provides the exact prompt templates used in our experiments to ensure reproducibility.
+This section provides the exact prompt templates used in our experiments.
 
-\subsection{Zero-shot Direct Prompt}
-
+\paragraph{Zero-shot Direct.}
 \begin{verbatim}
 Answer the following medical question by selecting
 the correct option.
 
 Question: {question}
 
-A. {option_a}
-B. {option_b}
-C. {option_c}
-D. {option_d}
+A. {option_a}  B. {option_b}
+C. {option_c}  D. {option_d}
 
 Answer with just the letter (A, B, C, or D):
 \end{verbatim}
 
-\subsection{Zero-shot Chain-of-Thought Prompt}
-
+\paragraph{Zero-shot Chain-of-Thought.}
 \begin{verbatim}
-Answer the following medical question. Think step by step.
+Answer the following medical question.
+Think step by step.
 
 Question: {question}
 
-A. {option_a}
-B. {option_b}
-C. {option_c}
-D. {option_d}
+A. {option_a}  B. {option_b}
+C. {option_c}  D. {option_d}
 
-Let's think step by step, then provide the answer
-as a single letter (A, B, C, or D):
+Let's think step by step, then provide the
+answer as a single letter (A, B, C, or D):
 \end{verbatim}
 
-\subsection{Few-shot Direct Prompt}
+\paragraph{Few-shot Direct.}
+Three example questions with correct answers were prepended to each test question. Examples were randomly sampled from different medical subjects to avoid information leakage.
 
-Three example questions with correct answers were prepended to each test question. Examples were randomly sampled from different medical subjects to avoid information leakage. The format follows:
-
-\begin{verbatim}
-Here are some example medical questions with answers:
-
-Example 1:
-Question: {example_1_question}
-A. {ex1_a}  B. {ex1_b}  C. {ex1_c}  D. {ex1_d}
-Answer: {ex1_answer}
-
-[Examples 2-3 follow same format]
-
-Now answer this question:
-Question: {question}
-A. {option_a}  B. {option_b}  C. {option_c}  D. {option_d}
-Answer:
-\end{verbatim}
-
-\subsection{Answer-only Prompt}
-
+\paragraph{Answer-only.}
 \begin{verbatim}
 {question}
-A. {option_a}
-B. {option_b}
-C. {option_c}
-D. {option_d}
+A. {option_a}  B. {option_b}
+C. {option_c}  D. {option_d}
 \end{verbatim}
 
-\subsection{PubMedQA Prompts}
-
-For evidence conditioning experiments, we used the following base template:
-
+\paragraph{PubMedQA.}
 \begin{verbatim}
-Based on the following context, answer the research question.
+Based on the following context, answer the
+research question.
 
 Context: {context}
-
 Question: {question}
 
 Answer with one word: yes, no, or maybe.
 \end{verbatim}
 
-For the question-only condition, the context line was omitted entirely.
+\section{Detailed Chain-of-Thought Analysis}\label{app:cot}
 
-\section{Detailed Chain-of-Thought Analysis}
+\paragraph{Case-level Breakdown.}
+Of 4,183 MedMCQA questions evaluated with both zero-shot direct and zero-shot CoT:
 
-\subsection{Case-level Breakdown}
-
-Of 4,183 MedMCQA questions evaluated with both zero-shot direct and zero-shot CoT prompting:
-
-\begin{table}[h]
+\begin{table}[t]
 \centering
-\caption{Case-level comparison of direct vs. CoT prompting}
+\caption{Case-level comparison of direct vs.\ CoT prompting.}
 \label{tab:cot_cases}
 \begin{tabular}{lrr}
 \toprule
-\textbf{Outcome} & \textbf{Count} & \textbf{Percentage} \\
+\textbf{Outcome} & \textbf{Count} & \textbf{Pct.} \\
 \midrule
 Both correct & 1,511 & 36.1\% \\
 Both wrong & 1,410 & 33.7\% \\
@@ -396,64 +442,45 @@ Direct wrong, CoT correct & 512 & 12.2\% \\
 \end{tabular}
 \end{table}
 
-The net loss of 238 questions (750 hurt minus 512 helped) accounts for the 5.7\% accuracy drop observed in our main results. This demonstrates that CoT is not merely adding noise---it systematically hurts more cases than it helps.
+\paragraph{Failure Patterns.}
+We analyzed 200 cases where CoT hurt performance (Table~\ref{tab:cot_failures}). The predominant pattern is verbose reasoning (90.7\%) where longer chains create opportunities for errors to compound. Categories are not mutually exclusive.
 
-\subsection{Failure Pattern Analysis}
-
-We manually analyzed a random sample of 200 cases where CoT hurt performance (direct correct, CoT wrong) to identify failure patterns:
-
-\begin{table}[h]
+\begin{table}[t]
 \centering
-\caption{Failure patterns in CoT responses (n=200 sample)}
+\caption{Failure patterns in CoT responses ($n{=}200$ sample).}
 \label{tab:cot_failures}
-\begin{tabular}{lrp{6cm}}
+\begin{tabular}{lrl}
 \toprule
 \textbf{Pattern} & \textbf{\%} & \textbf{Description} \\
 \midrule
-Verbose reasoning & 90.7\% & Response exceeded 500 characters; longer deliberation correlated with errors \\
-Self-contradiction & 25.6\% & Contained ``however,'' ``but,'' or ``although'' introducing conflicting logic \\
-Confident wrong conclusion & 11.1\% & Stated ``therefore'' or ``thus'' before incorrect answer \\
-Correct concept, wrong application & 34.5\% & Identified relevant medical concept but misapplied it \\
-Distractor confusion & 28.0\% & Explicitly considered correct answer but rejected it for a distractor \\
-Overthinking & 18.5\% & Simple question complicated by unnecessary considerations \\
+Verbose reasoning & 90.7 & $>$500 chars \\
+Correct concept, wrong applic. & 34.5 & Misapplied knowledge \\
+Distractor confusion & 28.0 & Rejected correct ans. \\
+Self-contradiction & 25.6 & Conflicting logic \\
+Overthinking & 18.5 & Over-complicated \\
+Confident wrong concl. & 11.1 & ``Therefore'' + wrong \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Note: Categories are not mutually exclusive; many failures exhibit multiple patterns.
+\paragraph{Overthinking Examples.}
+Two additional cases illustrate the ``Overthinking'' failure pattern, where CoT introduces unnecessary complexity into straightforward questions.
 
-\subsection{Illustrative Example: Organophosphate Poisoning}
+\smallskip\noindent\textbf{Example A (Pharmacology, correct answer: B).}
+\textit{Question:} ``Which drug is used for the treatment of acute gout?''
+Options: A)~Allopurinol, B)~Colchicine, C)~Probenecid, D)~Febuxostat.
+Direct prompting correctly answers ``B.'' CoT begins: ``Allopurinol is a xanthine oxidase inhibitor used for chronic gout prophylaxis\ldots Colchicine is effective for acute flares\ldots However, NSAIDs are often first-line for acute gout, and colchicine has a narrow therapeutic index\ldots Probenecid is a uricosuric agent\ldots Given the considerations about side effects\ldots'' and selects ``A'' (Allopurinol), a drug contraindicated during acute attacks. The model correctly identified colchicine as the acute treatment but then over-deliberated on side effect considerations irrelevant to the question.
 
-\textbf{Question:} A patient presents with miosis, bradycardia, excessive salivation, and muscle fasciculations after exposure to pesticides. The most appropriate antidote is:
+\smallskip\noindent\textbf{Example B (Anatomy, correct answer: C).}
+\textit{Question:} ``The longest cranial nerve is:''
+Options: A)~Trigeminal, B)~Facial, C)~Vagus, D)~Hypoglossal.
+Direct prompting correctly answers ``C.'' CoT responds: ``The trigeminal nerve has three divisions and covers a large facial area\ldots The vagus nerve extends to the abdomen, making it anatomically the longest\ldots However, if we consider the total fiber length including all branches, the trigeminal's three divisions might collectively exceed\ldots'' and selects ``A'' (Trigeminal). The model introduced a specious ``total branch length'' reasoning that turned a factual recall question into an unnecessary deliberation.
 
-\textbf{Options:} A. Atropine \quad B. Pralidoxime \quad C. Neostigmine \quad D. Physostigmine
+\section{Position Bias Analysis}\label{app:bias}
 
-\textbf{Correct answer:} A (Atropine)
-
-\textbf{Direct prompt response:} ``A''
-
-\textbf{CoT prompt response (abbreviated):}
-\begin{quote}
-``Let me think through this step by step. The symptoms described---miosis, bradycardia, salivation, fasciculations---are classic signs of cholinergic crisis, likely from organophosphate poisoning which inhibits acetylcholinesterase...
-
-Atropine is an anticholinergic that would block muscarinic effects. Pralidoxime reactivates acetylcholinesterase. Both are used in organophosphate poisoning...
-
-However, neostigmine is a cholinesterase inhibitor that could... wait, let me reconsider. The question asks for an antidote. Neostigmine would actually worsen the condition by further inhibiting acetylcholinesterase...
-
-But pralidoxime specifically targets the organophosphate-enzyme complex... Given the specific mechanism, I'll go with \textbf{C. Neostigmine}.''
-\end{quote}
-
-This example illustrates the characteristic failure mode: the model correctly identifies the medical condition and relevant pharmacology, explicitly notes that neostigmine would worsen the condition, but then talks itself into selecting it anyway after extended deliberation.
-
-\section{Position Bias Analysis}
-
-\subsection{Distribution Comparison}
-
-Table~\ref{tab:position_dist} shows the distribution of correct answers in MedMCQA compared to model predictions under different prompting conditions.
-
-\begin{table}[h]
+\begin{table}[t]
 \centering
-\caption{Answer distribution: ground truth vs. predictions by condition}
+\caption{Answer distribution: ground truth vs.\ predictions.}
 \label{tab:position_dist}
 \begin{tabular}{lcccc}
 \toprule
@@ -470,364 +497,110 @@ Answer-only & 41.2\% & 24.3\% & 19.1\% & 15.4\% \\
 \end{tabular}
 \end{table}
 
-The model shows a consistent preference for option A across all conditions, but this bias is dramatically amplified under few-shot prompting. With few-shot direct, the model predicts A for 76\% of questions despite A being correct only 32.2\% of the time---an overweight of 43.8 percentage points.
+The model shows a consistent preference for option A across all conditions, but this bias is dramatically amplified under few-shot prompting. With few-shot direct, the model predicts A for 76\% of questions despite A being correct only 32.2\% of the time, an overweight of 43.8 percentage points.
 
-\subsection{Position Bias Score Computation}
+\section{Option Order Details}\label{app:order}
 
-Position bias score is computed as:
-\[
-\text{Bias} = \frac{1}{4} \sum_{i \in \{A,B,C,D\}} |P_{\text{pred}}(i) - P_{\text{truth}}(i)|
-\]
-
-where $P_{\text{pred}}(i)$ is the proportion of predictions for position $i$ and $P_{\text{truth}}(i)$ is the proportion of correct answers at position $i$.
-
-\begin{table}[h]
+\begin{table}[t]
 \centering
-\caption{Position bias scores by prompting condition}
-\label{tab:bias_scores}
-\begin{tabular}{lc}
-\toprule
-\textbf{Condition} & \textbf{Position Bias Score} \\
-\midrule
-Answer-only & 0.096 \\
-Zero-shot direct & 0.137 \\
-Zero-shot CoT & 0.275 \\
-Few-shot CoT & 0.413 \\
-Few-shot direct & 0.472 \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\section{Option Order Sensitivity Details}
-
-\subsection{Flip Rate by Perturbation Type}
-
-\begin{table}[h]
-\centering
-\caption{Detailed flip rates for each perturbation type}
-\label{tab:flip_rates}
-\begin{tabular}{lccc}
-\toprule
-\textbf{Perturbation} & \textbf{Flip Rate} & \textbf{Accuracy} & \textbf{$\Delta$ Accuracy} \\
-\midrule
-Original & --- & 47.6\% & --- \\
-Distractor swap & 41.2\% & 38.7\% & $-$8.9\% \\
-Random shuffle & 58.3\% & 29.2\% & $-$18.4\% \\
-Rotate-2 & 63.7\% & 24.3\% & $-$23.3\% \\
-Rotate-1 & 72.9\% & 20.2\% & $-$27.4\% \\
-\midrule
-\textbf{Mean} & 59.1\% & 28.4\% & $-$18.4\% \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-The rotate-1 perturbation causes the highest flip rate (72.9\%) and largest accuracy drop ($-$27.4\%). This is notable because rotate-1 moves every option to an adjacent position (A$\to$B, B$\to$C, C$\to$D, D$\to$A), suggesting the model may have learned associations between specific content patterns and specific positions.
-
-\subsection{Consistency Analysis}
-
-We define a ``consistent'' prediction as one where the model selects the same \textit{content} (not position) across all perturbations. Only 23.4\% of questions received consistent predictions across all five conditions. This means for over three-quarters of questions, the model's answer depends on option ordering.
-
-\begin{table}[h]
-\centering
-\caption{Prediction consistency across perturbations}
+\caption{Prediction consistency across perturbations.}
 \label{tab:consistency}
 \begin{tabular}{lr}
 \toprule
-\textbf{Consistency Level} & \textbf{Percentage} \\
+\textbf{Consistency Level} & \textbf{Pct.} \\
 \midrule
-Consistent across all 5 conditions & 23.4\% \\
-Consistent across 4 conditions & 18.7\% \\
-Consistent across 3 conditions & 21.2\% \\
-Consistent across 2 conditions & 19.8\% \\
-Different answer for each condition & 16.9\% \\
+All 5 conditions & 23.4\% \\
+4 of 5 conditions & 18.7\% \\
+3 of 5 conditions & 21.2\% \\
+2 of 5 conditions & 19.8\% \\
+All different & 16.9\% \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\section{Evidence Conditioning Details}
+Only 23.4\% of questions received consistent predictions across all five ordering conditions. For over three-quarters of questions, the model's answer depends on option ordering.
 
-\subsection{Truncation Strategy Comparison}
+\section{Truncation Strategy Comparison}\label{app:trunc}
 
-Our expanded analysis tests five truncation strategies at 50\% context reduction. Table~\ref{tab:trunc_comparison} highlights the dramatic effect of truncation direction.
-
-\begin{table}[h]
+\begin{table}[t]
 \centering
-\caption{Truncation strategy comparison at 50\% reduction (MedGemma-4B, PubMedQA $n=1{,}000$)}
+\caption{Truncation strategies at 50\% reduction (MedGemma-4B, PubMedQA $n{=}1{,}000$).}
 \label{tab:trunc_comparison}
 \begin{tabular}{lccc}
 \toprule
-\textbf{Strategy} & \textbf{Accuracy} & \textbf{95\% CI} & \textbf{$\Delta$ vs Full} \\
+\textbf{Strategy} & \textbf{Acc.} & \textbf{95\% CI} & \textbf{$\Delta$ Full} \\
 \midrule
-Full context (reference) & 45.8\% & [42.7\%, 48.9\%] & --- \\
+Full context (ref.) & 45.8\% & [42.7, 48.9] & -- \\
 \midrule
-Back-truncated 50\% & 44.5\% & [41.4\%, 47.6\%] & $-$1.3\% \\
-Salient top-5 & 40.1\% & [37.1\%, 43.2\%] & $-$5.7\% \\
-Middle-truncated 50\% & 33.9\% & [31.0\%, 36.9\%] & $-$11.9\% \\
-Sentence-trunc 50\% & 30.3\% & [27.5\%, 33.2\%] & $-$15.5\% \\
-Front-truncated 50\% & 13.8\% & [11.8\%, 16.1\%] & $-$32.0\% \\
+Back-trunc.\ 50\% & 44.5\% & [41.4, 47.6] & $-$1.3 \\
+Salient top-5 & 40.1\% & [37.1, 43.2] & $-$5.7 \\
+Middle-trunc.\ 50\% & 33.9\% & [31.0, 36.9] & $-$11.9 \\
+Sent.-trunc.\ 50\% & 30.3\% & [27.5, 33.2] & $-$15.5 \\
+Front-trunc.\ 50\% & 13.8\% & [11.8, 16.1] & $-$32.0 \\
 \midrule
-Question only (no context) & 34.5\% & [31.6\%, 37.5\%] & $-$11.3\% \\
+Question only & 34.5\% & [31.6, 37.5] & $-$11.3 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-The 30.7 percentage point gap between back-truncation (44.5\%) and front-truncation (13.8\%) at the same reduction ratio is the single largest effect in our study. Front-truncation is worse than having no context at all (13.8\% vs 34.5\%), while back-truncation preserves nearly all performance.
+The 30.7 percentage point gap between back-truncation (44.5\%) and front-truncation (13.8\%) at the same reduction ratio is the single largest effect in our study.
 
-\subsection{Context Length Statistics}
+\section{Robustness Baselines Details}\label{app:baselines}
 
-\begin{table}[h]
+\paragraph{Cloze Scoring.}
+For each MedMCQA question, we extract the log-probabilities of the four option tokens (A, B, C, D) at the final position. The option with the highest log-probability is selected. This requires only a single forward pass with no autoregressive generation.
+
+\begin{table}[t]
 \centering
-\caption{Context length statistics for PubMedQA conditions (in words)}
-\label{tab:context_length}
-\begin{tabular}{lccc}
-\toprule
-\textbf{Condition} & \textbf{Mean} & \textbf{Median} & \textbf{Std Dev} \\
-\midrule
-Full context & 287.3 & 271 & 98.4 \\
-Front-truncated 50\% & 143.6 & 135 & 49.2 \\
-Front-truncated 25\% & 71.8 & 68 & 24.6 \\
-Back-truncated 50\% & 143.6 & 135 & 49.2 \\
-Middle-truncated 50\% & 143.6 & 135 & 49.2 \\
-Background only & 112.4 & 98 & 52.1 \\
-Results only & 156.2 & 142 & 67.8 \\
-Salient top-5 & $\sim$140 & --- & --- \\
-Salient top-3 & $\sim$85 & --- & --- \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\subsection{Answer Distribution by Condition}
-
-PubMedQA has three answer classes: yes, no, and maybe. Table~\ref{tab:pubmed_dist} shows how predictions vary by context condition.
-
-\begin{table}[h]
-\centering
-\caption{PubMedQA prediction distribution by context condition (MedGemma-4B)}
-\label{tab:pubmed_dist}
-\begin{tabular}{lccc}
-\toprule
-\textbf{Condition} & \textbf{Yes} & \textbf{No} & \textbf{Maybe} \\
-\midrule
-Ground truth & 55.2\% & 33.8\% & 11.0\% \\
-\midrule
-Question only & 62.1\% & 28.4\% & 9.5\% \\
-Full context & 58.3\% & 31.2\% & 10.5\% \\
-Front-truncated 50\% & 71.4\% & 22.1\% & 6.5\% \\
-Front-truncated 25\% & 74.8\% & 19.7\% & 5.5\% \\
-Background only & 68.2\% & 24.6\% & 7.2\% \\
-Results only & 59.1\% & 30.4\% & 10.5\% \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-Under front-truncation, the model becomes increasingly biased toward ``yes'' responses, suggesting it defaults to affirmative answers when context lacks its orienting introduction. This bias is notably absent under back-truncation.
-
-\section{Robustness Baselines Details}
-
-\subsection{Cloze Scoring}
-
-For each MedMCQA question, we feed the prompt through the model and extract the log-probabilities of the four option tokens (A, B, C, D) at the final position. The option with the highest log-probability is selected as the prediction. This method requires only a single forward pass (no autoregressive generation) and is deterministic.
-
-\begin{table}[h]
-\centering
-\caption{Cloze scoring detailed results}
+\caption{Cloze scoring detailed results.}
 \label{tab:cloze_detail}
 \begin{tabular}{lcc}
 \toprule
-\textbf{Metric} & \textbf{4B ($n=4{,}183$)} & \textbf{27B ($n=1{,}000$)} \\
+\textbf{Metric} & \textbf{4B ($n{=}4{,}183$)} & \textbf{27B ($n{=}1{,}000$)} \\
 \midrule
 Accuracy & 51.8\% & 64.5\% \\
-95\% CI & [50.3\%, 53.3\%] & [61.4\%, 67.1\%] \\
+95\% CI & [50.3, 53.3] & [61.4, 67.1] \\
 Mean logprob margin & 4.07 & 3.14 \\
-Std logprob margin & 2.38 & 2.09 \\
-Position bias score & 0.013 & 0.054 \\
+Position bias & 0.013 & 0.054 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-The log-probability margin---the difference between the top-1 and top-2 option log-probs---provides a natural confidence measure. Both models show well-separated preferences (margins $>$3), though 27B's slightly smaller margin may reflect more uniform probability mass across options despite higher accuracy.
+\paragraph{Permutation Voting.}
+For each question, $K{=}4$ distinct orderings receive independent greedy decoding. Predictions are inverse-mapped to canonical labels; majority vote determines the final answer. The agreement rate serves as a calibration signal.
 
-\subsection{Permutation Voting}
-
-For each question, we generate $K=4$ distinct orderings of the answer options. Each ordering receives an independent greedy decoding pass. Predictions are inverse-mapped back to the canonical option labels, and a majority vote determines the final answer. In case of ties, the first ordering's prediction is used. The agreement rate (proportion of orderings that agree with the majority vote) serves as a calibration signal.
-
-\begin{table}[h]
+\begin{table}[t]
 \centering
-\caption{Permutation voting detailed results (MedGemma-4B, $n=1{,}000$, $K=4$ orderings)}
+\caption{Permutation voting (MedGemma-4B, $n{=}1{,}000$, $K{=}4$).}
 \label{tab:perm_vote_detail}
 \begin{tabular}{lc}
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
-Aggregated accuracy (majority vote) & 49.0\% \\
-Per-permutation accuracy (mean $\pm$ std) & 45.1\% $\pm$ 1.7\% \\
-Per-permutation accuracies & 47.7\%, 43.6\%, 43.5\%, 45.4\% \\
+Aggregated accuracy & 49.0\% \\
+Per-perm.\ accuracy (mean $\pm$ std) & 45.1\% $\pm$ 1.7\% \\
 Mean agreement rate & 70.0\% \\
 Agreement rate std & 22.1\% \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{CoT Self-Consistency}
+\section{Threats to Validity}\label{app:threats}
 
-\textit{Results pending.} We sample $N \in \{3, 5\}$ chain-of-thought responses per question at temperature 0.7 and take a majority vote. This tests whether diverse reasoning paths can overcome the single-sample fragility identified in Experiment~1.
+\paragraph{Answer Parsing.}
+Our evaluation relies on extracting answer letters via regex. Parse error rates are below 2.5\% across all conditions (1.4\% for direct, 2.1\% for CoT). The 0.7-point difference cannot explain the 5.7\% accuracy gap. Moreover, CoT being harder to parse makes our finding more conservative.
 
-\section{Threats to Validity}
+\paragraph{Dataset Imbalance.}
+The model's overweighting of position A (45.9\% predicted vs.\ 32.2\% true) far exceeds what ground truth would justify. The 59.1\% flip rate from option shuffling directly demonstrates position-based predictions that cannot be explained by dataset imbalance.
 
-\subsection{Answer Parsing}
+\paragraph{Dataset Contamination.}
+Both benchmarks are publicly available and may have appeared in pretraining data. However, our analysis focuses on \textit{relative} robustness across conditions. Memorized answers should not change when options are shuffled or prompts are reformatted. The large relative degradations we observe indicate genuine sensitivity independent of potential contamination.
 
-Our evaluation relies on extracting answer letters from model outputs via regex patterns. We validated our parser on 500 randomly sampled responses across all conditions:
+\section{Reproducibility}\label{app:repro}
 
-\begin{table}[h]
-\centering
-\caption{Parsing error rates by condition}
-\label{tab:parsing}
-\begin{tabular}{lc}
-\toprule
-\textbf{Condition} & \textbf{Parse Error Rate} \\
-\midrule
-Zero-shot direct & 1.4\% \\
-Zero-shot CoT & 2.1\% \\
-Few-shot direct & 1.6\% \\
-Few-shot CoT & 1.9\% \\
-Answer-only & 1.2\% \\
-\bottomrule
-\end{tabular}
-\end{table}
+All randomized experiments use seeds $\{42, 123, 456\}$. MedMCQA outputs are constrained to letters A through D; PubMedQA to yes/no/maybe. Answers are extracted via regex matching the first valid token. Unparseable outputs are scored as incorrect.
 
-CoT responses were slightly harder to parse (2.1\% vs 1.4\% for direct), but this 0.7 percentage point difference cannot explain the 5.7\% accuracy gap. Moreover, the direction of bias (CoT harder to parse) would cause us to \textit{underestimate} CoT accuracy, making our finding that CoT hurts performance more conservative.
-
-\subsection{Dataset Imbalance}
-
-The position bias we observe could theoretically reflect ground truth imbalance rather than model preference. However, two factors argue against this interpretation:
-
-First, the model's overweighting of position A (45.9\% predicted vs 32.2\% true) far exceeds what ground truth would justify.
-
-Second, our option shuffle experiments directly test for position-based predictions by tracking content across reorderings. The 59.1\% flip rate demonstrates that the model is responding to position rather than content---this finding cannot be explained by dataset imbalance.
-
-\subsection{Dataset Contamination}
-
-Both MedMCQA and PubMedQA are publicly available and may have been included in MedGemma's pretraining data. We cannot fully rule out contamination. However, our analysis focuses on \textit{relative} robustness across conditions rather than absolute accuracy. Even if the model has memorized answers, contamination cannot explain:
-
-\begin{itemize}
-    \item Why CoT causes accuracy to \textit{decrease} by 5.7\%
-    \item Why shuffling options causes accuracy to drop by up to 27.4\%
-    \item Why truncated context performs worse than no context
-\end{itemize}
-
-Memorized answers should be robust to prompt variations. The large relative degradations we observe indicate genuine sensitivity to prompt format that exists independent of potential contamination.
-
-\subsection{Few-shot Example Selection}
-
-Our main results use three curated examples fixed across all test questions. To address whether example selection drives the observed few-shot degradation, we additionally test random, label-balanced, and subject-matched selection from the training set, as well as two alternative orderings of the curated examples (results pending). These expanded conditions test whether the few-shot degradation is an artifact of a particular example set or a more general phenomenon. Remaining limitations include $k > 3$ examples and adversarial selection, which we leave to future work.
-
-\subsection{Model-Specific Findings}
-
-Our experiments focus primarily on MedGemma. Different model families (Med-PaLM, GPT-4, Meditron) might exhibit different sensitivity patterns. We include limited BioMistral-7B results showing even more extreme prompt sensitivity in base models, but comprehensive multi-model evaluation would strengthen generalizability claims.
-
-\section{Limitations}
-
-\subsection{Model Coverage}
-
-We evaluate MedGemma-4B extensively across all experiments and MedGemma-27B on evidence conditioning with partial coverage of prompt ablation and option-order experiments (pending). The landscape of medical language models includes many other systems (Med-PaLM, Meditron, clinical GPT variants) that might exhibit different patterns. Our focus on depth over breadth means findings may not generalize to all medical LLMs.
-
-\subsection{Quantization Constraints}
-
-MedGemma-27B required full bfloat16 precision inference because 4-bit quantization produced NaN outputs. This limits accessibility:
-
-\begin{itemize}
-    \item Requires 80GB+ GPU memory (A100 80GB or H100)
-    \item Excludes most academic researchers and smaller healthcare organizations
-    \item Prevents cost-effective deployment at scale
-\end{itemize}
-
-This also suggests that quantization techniques validated on general-purpose models may fail on medical-specialist architectures---an important consideration for deployment planning.
-
-\subsection{Task Format}
-
-Our evaluation uses two specific formats:
-\begin{itemize}
-    \item Multiple-choice questions (MedMCQA)
-    \item Yes/no/maybe classification (PubMedQA)
-\end{itemize}
-
-Neither format directly mirrors clinical workflows involving:
-\begin{itemize}
-    \item Free-text clinical notes
-    \item Open-ended diagnostic reasoning
-    \item Conversational patient interactions
-    \item Multi-step clinical decision making
-\end{itemize}
-
-Results may not generalize to these more realistic deployment scenarios.
-
-\subsection{Language}
-
-Both datasets are English-only. Medical terminology, reasoning patterns, and cultural context differ across languages and healthcare systems. Our findings should not be assumed to transfer to non-English medical QA.
-
-\subsection{Evaluation Protocol}
-
-We evaluate single-turn question answering, with self-consistency as the one multi-sample protocol. Alternative protocols might yield different results:
-
-\begin{itemize}
-    \item Multi-turn dialogue with clarification questions
-    \item Chain-of-verification approaches
-    \item Human-in-the-loop evaluation
-\end{itemize}
-
-\section{Computational Resources}
-
-All experiments were conducted on 8$\times$ NVIDIA A100-80GB GPUs. Resource requirements:
-
-\begin{table}[h]
-\centering
-\caption{Computational requirements by model}
-\label{tab:compute}
-\begin{tabular}{lcccc}
-\toprule
-\textbf{Model} & \textbf{GPU Memory} & \textbf{Precision} & \textbf{Time/Question} \\
-\midrule
-MedGemma-4B & $\sim$9 GB & bfloat16 & $\sim$0.8s \\
-MedGemma-27B & $\sim$55 GB & bfloat16 & $\sim$2.4s \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-Total compute time for all experiments: approximately 200+ GPU-hours on A100-80GB (experiments still in progress for 27B prompt ablation and multi-seed option-order runs).
-
-\section{Reproducibility}
-
-\subsection{Inference Protocol}
-
-All results use a frozen inference configuration:
-
-\begin{table}[h]
-\centering
-\caption{Frozen inference parameters}
-\label{tab:inference_params}
-\begin{tabular}{lcc}
-\toprule
-\textbf{Parameter} & \textbf{Deterministic} & \textbf{Self-Consistency} \\
-\midrule
-Temperature & 0.0 & 0.7 \\
-Top-$p$ & 1.0 & 0.95 \\
-Top-$k$ & 0 & 50 \\
-\texttt{do\_sample} & False & True \\
-\texttt{max\_new\_tokens} & 256 & 256 \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\subsection{Random Seeds}
-
-All randomized experiments (option shuffling, few-shot selection) use the seeds $\{42, 123, 456\}$ with results reported as mean $\pm$ 95\% CI. Few-shot example selection uses a fixed seed of 42 for reproducibility.
-
-\subsection{Output Constraints and Parsing}
-
-MedMCQA outputs are constrained to letters A--D. PubMedQA outputs are constrained to yes/no/maybe. Answers are extracted via regex matching the first occurrence of a valid answer token. Unparseable outputs are scored as incorrect. Parser failure rates across all conditions are below 2.5\% for MedGemma.
-
-\subsection{Code and Data Availability}
-
-All experiment code, prompt templates, configuration files, and analysis scripts are available at: \textit{[repository URL]}. Raw model outputs and cached responses are provided for full reproducibility.
+Code, prompt templates, configs, and analysis scripts are available at:
+\url{https://github.com/UNHSAILLab/MedMCQA-Robustness-Study}.
 
 \end{document}

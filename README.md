@@ -1,12 +1,16 @@
 # When Chain-of-Thought Backfires: Evaluating Prompt Sensitivity in Medical Language Models
 
-[![Paper](https://img.shields.io/badge/Paper-PDF-red)](paper/main.pdf)
+[![Paper (Camera-Ready)](https://img.shields.io/badge/Paper-Camera--Ready-red)](paper/2AI_CRC_183.pdf)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 
+**Authors:** Binesh Sadanandan, Vahid Behzadan
+**Affiliation:** SAIL Lab, University of New Haven
+**Paper:** [`paper/2AI_CRC_183.pdf`](paper/2AI_CRC_183.pdf) (camera-ready)
+
 This repository contains the code and experiments for our research on prompt sensitivity in medical language models. We evaluate MedGemma (4B and 27B variants) on MedMCQA and PubMedQA, revealing that standard prompt engineering techniques can **harm** rather than help performance on medical question answering.
 
-**Repository:** [https://github.com/thedatasense/MedMCQA-Robustness-Study](https://github.com/thedatasense/MedMCQA-Robustness-Study)
+**Repository:** [https://github.com/UNHSAILLab/MedMCQA-Robustness-Study](https://github.com/UNHSAILLab/MedMCQA-Robustness-Study)
 
 ## Key Findings
 
@@ -26,7 +30,7 @@ Our experiments reveal several concerning findings that challenge conventional p
 
 ## Abstract
 
-Large language models are increasingly deployed in medical settings, yet their sensitivity to prompt formatting remains poorly characterized. We evaluate MedGemma (4B and 27B variants) on MedMCQA (4,183 questions) and PubMedQA (1,000 questions). Our experiments reveal that chain-of-thought prompting decreases accuracy by 5.7% compared to direct answering; few-shot examples degrade performance by 11.9% while increasing position bias from 0.14 to 0.47; shuffling answer options causes the model to change predictions 59.1% of the time with accuracy dropping up to 27.4 percentage points; and truncating context to 50% causes accuracy to plummet below the no-context baseline. These results demonstrate that prompt engineering techniques validated on general-purpose models do not transfer to domain-specific medical LLMs.
+Large Language Models (LLMs) are increasingly deployed in medical settings, yet their sensitivity to prompt formatting remains poorly characterized. We evaluate MedGemma (4B and 27B parameters) on MedMCQA (4,183 questions) and PubMedQA (1,000 questions) across a broad suite of robustness tests. Chain-of-Thought (CoT) prompting *decreases* accuracy by 5.7% compared to direct answering. Few-shot examples degrade performance by 11.9% while increasing position bias from 0.14 to 0.47. Shuffling answer options causes the model to change predictions 59.1% of the time, with accuracy dropping up to 27.4 percentage points. Front-truncating context to 50% causes accuracy to plummet below the no-context baseline, yet back-truncation preserves 97% of full-context accuracy. We further show that cloze scoring (selecting the highest log-probability option token) achieves 51.8% (4B) and 64.5% (27B), surpassing all prompting strategies and revealing that models "know" more than their generated text shows. Permutation voting recovers 4 percentage points over single-ordering inference. These results demonstrate that prompt engineering techniques validated on general-purpose models do not transfer to domain-specific medical LLMs, and that reliable alternatives exist.
 
 ## Installation
 
@@ -40,7 +44,7 @@ Large language models are increasingly deployed in medical settings, yet their s
 
 ```bash
 # Clone the repository
-git clone https://github.com/thedatasense/MedMCQA-Robustness-Study.git
+git clone https://github.com/UNHSAILLab/MedMCQA-Robustness-Study.git
 cd MedMCQA-Robustness-Study
 
 # Create virtual environment
@@ -153,15 +157,15 @@ Compares five prompting strategies on MedMCQA (n=4,183):
 
 ### Experiment 2: Option Order Sensitivity
 
-Tests robustness to answer option reordering:
+Tests robustness to answer option reordering on MedMCQA (n=4,183, seed 42):
 
 | Perturbation | Accuracy | Flip Rate |
 |--------------|----------|-----------|
 | Original | 47.6% | — |
-| Random shuffle | 29.2% | 58.3% |
+| Random shuffle | 27.3% | 57.8% |
 | Rotate-1 | 20.2% | 72.9% |
-| Rotate-2 | 24.3% | 63.7% |
-| Distractor swap | 38.7% | 41.2% |
+| Rotate-2 | 21.9% | 69.7% |
+| Distractor swap | 47.6% | 36.1% |
 
 **Mean flip rate: 59.1%** — the model changes its answer more often than not when options are shuffled.
 
@@ -171,18 +175,31 @@ Tests context sensitivity on PubMedQA (n=1,000):
 
 | Condition | MedGemma-4B | MedGemma-27B |
 |-----------|-------------|--------------|
-| Question only | 36.7% | 31.0% |
-| Full context | 45.0% | 38.2% |
-| Truncated 50% | 14.1% | 23.4% |
-| Results only | 41.7% | **40.0%** |
+| Question only | 34.5% | 31.0% |
+| Full context | 45.8% | 38.2% |
+| Front-truncated 50% | 13.8% | 23.4% |
+| Back-truncated 50% | **44.5%** | — |
+| Results only | 41.9% | **40.0%** |
 
-Key finding: Truncated context performs **worse** than no context, indicating partial information actively misleads the model.
+Key finding: Front-truncated context performs **worse** than no context (13.8% vs 34.5%), but back-truncation at the same 50% ratio preserves 97% of full-context accuracy.
+
+### Experiment 4: Robustness Baselines
+
+Cloze scoring and permutation voting on MedMCQA:
+
+| Method | MedGemma-4B | MedGemma-27B |
+|--------|-------------|--------------|
+| Zero-shot direct (reference) | 47.6% | — |
+| Cloze scoring | 51.8% | **64.5%** |
+| Permutation vote (K=4) | 49.0% | — |
+
+Cloze scoring (reading log-probabilities of option tokens) achieves the highest accuracy of any method tested, with near-zero position bias (0.013 for 4B, 0.054 for 27B).
 
 ## Google Colab
 
 Try the experiments in Google Colab:
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/thedatasense/MedMCQA-Robustness-Study/blob/master/notebooks/colab_demo.ipynb)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/UNHSAILLab/MedMCQA-Robustness-Study/blob/master/notebooks/colab_demo.ipynb)
 
 **Note:** MedGemma-4B runs on T4 GPU. MedGemma-27B requires A100 80GB with full precision (4-bit quantization produces NaN outputs).
 
@@ -201,18 +218,20 @@ Based on our findings:
 If you use this code or findings in your research, please cite:
 
 ```bibtex
-@article{sadanandan2025cot,
+@inproceedings{sadanandan2025cotbackfires,
   title={When Chain-of-Thought Backfires: Evaluating Prompt Sensitivity in Medical Language Models},
-  author={Sadanandan, Binesh},
-  journal={arXiv preprint},
+  author={Sadanandan, Binesh and Behzadan, Vahid},
+  booktitle={2AI 2025},
   year={2025},
-  note={University of New Haven}
+  note={Camera-ready, paper ID 183}
 }
 ```
 
+> Replace the `booktitle` field with the full proceedings name once available.
+
 ## Paper
 
-The full paper is available at [`paper/main.pdf`](paper/main.pdf).
+The camera-ready paper is available at [`paper/2AI_CRC_183.pdf`](paper/2AI_CRC_183.pdf). LaTeX source files are in [`paper/`](paper/).
 
 **Key sections:**
 - Introduction and motivation
@@ -236,9 +255,10 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Contact
 
-**Binesh Sadanandan**
-University of New Haven
-Email: bsada1@unh.newhaven.edu
+**Binesh Sadanandan** — bsada1@unh.newhaven.edu
+**Vahid Behzadan** — vbehzadan@newhaven.edu
+
+SAIL Lab, University of New Haven, West Haven, CT 06516, USA
 
 ---
 
