@@ -1,12 +1,13 @@
 # When Chain-of-Thought Backfires: Evaluating Prompt Sensitivity in Medical Language Models
 
+[![arXiv](https://img.shields.io/badge/arXiv-2603.25960-b31b1b.svg)](https://arxiv.org/abs/2603.25960)
 [![Paper (Camera-Ready)](https://img.shields.io/badge/Paper-Camera--Ready-red)](paper/2AI_CRC_183.pdf)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 
 **Authors:** Binesh Sadanandan, Vahid Behzadan
 **Affiliation:** SAIL Lab, University of New Haven
-**Paper:** [`paper/2AI_CRC_183.pdf`](paper/2AI_CRC_183.pdf) (camera-ready)
+**Paper:** [arXiv:2603.25960](https://arxiv.org/abs/2603.25960) · [`paper/2AI_CRC_183.pdf`](paper/2AI_CRC_183.pdf) (camera-ready)
 
 This repository contains the code and experiments for our research on prompt sensitivity in medical language models. We evaluate MedGemma (4B and 27B variants) on MedMCQA and PubMedQA, revealing that standard prompt engineering techniques can **harm** rather than help performance on medical question answering.
 
@@ -218,19 +219,21 @@ Based on our findings:
 If you use this code or findings in your research, please cite:
 
 ```bibtex
-@inproceedings{sadanandan2025cotbackfires,
+@article{sadanandan2025cotbackfires,
   title={When Chain-of-Thought Backfires: Evaluating Prompt Sensitivity in Medical Language Models},
   author={Sadanandan, Binesh and Behzadan, Vahid},
-  booktitle={2AI 2025},
+  journal={arXiv preprint arXiv:2603.25960},
   year={2025},
-  note={Camera-ready, paper ID 183}
+  url={https://arxiv.org/abs/2603.25960}
 }
 ```
 
 
 ## Paper
 
-The camera-ready paper is available at [`paper/2AI_CRC_183.pdf`](paper/2AI_CRC_183.pdf). LaTeX source files are in [`paper/`](paper/).
+- **arXiv preprint:** [arXiv:2603.25960](https://arxiv.org/abs/2603.25960)
+- **Camera-ready PDF:** [`paper/2AI_CRC_183.pdf`](paper/2AI_CRC_183.pdf)
+- **LaTeX source:** [`paper/`](paper/)
 
 **Key sections:**
 - Introduction and motivation
@@ -252,9 +255,20 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [PubMedQA](https://huggingface.co/datasets/qiaojin/PubMedQA) dataset
 - Experiments conducted on NVIDIA A100 GPUs
 
+## Development Notes
+
+The research code in this repository was written by the authors. [Claude Code](https://claude.com/claude-code) (Opus 4.5) was used to assist with:
+
+- Repository reorganization and file structure
+- Orchestration of jobs on the remote GPU cluster
+- Portions of the code documentation
+
+All code was reviewed by the authors before being committed.
+
 ## Contact
 
 **Binesh Sadanandan** — bsada1@unh.newhaven.edu
+**Vahid Behzadan** — vbehzadan@newhaven.edu
 
 SAIL Lab, University of New Haven, West Haven, CT 06516, USA
 
