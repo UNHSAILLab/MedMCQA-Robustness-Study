@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>When Chain-of-Thought Backfires — Interactive Companion</title>
+<meta name="description" content="Play with the experiments from 'When Chain-of-Thought Backfires: Evaluating Prompt Sensitivity in Medical Language Models.'">
+<style>
+:root{
+  --blue:#003366; --ink:#1c2b48; --yellow:#ffcc33; --cyan:#00b9ff;
+  --green:#2e9e6b; --dgreen:#1f7a4d; --red:#d6453f; --dred:#9b2620;
+  --amber:#f0b429; --slate:#5b6b7b; --gray:#9aa4b0;
+  --panel:#f6f8fb; --line:#e6ebf1; --card:#ffffff; --bg:#eef2f7;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;font-family:"Segoe UI",Helvetica,Arial,sans-serif;color:var(--ink);
+  background:var(--bg);line-height:1.55;-webkit-font-smoothing:antialiased}
+a{color:var(--blue)}
+.wrap{max-width:1080px;margin:0 auto;padding:0 18px}
+
+/* header */
+header{background:linear-gradient(160deg,#1c2b48,#003366 70%);color:#fff;padding:46px 0 30px}
+header .tag{display:inline-block;background:var(--yellow);color:var(--ink);font-weight:700;
+  font-size:12px;letter-spacing:.5px;padding:4px 10px;border-radius:20px;text-transform:uppercase}
+header h1{font-size:34px;line-height:1.2;margin:14px 0 6px}
+header h1 .a{color:var(--yellow)}
+header .sub{font-size:18px;color:#d8e6ec;font-style:italic;margin:0 0 14px}
+header .meta{font-size:14px;color:#bcd0dc}
+.badges{margin-top:18px;display:flex;flex-wrap:wrap;gap:10px}
+.badges a{background:rgba(255,255,255,.12);color:#fff;text-decoration:none;font-size:13.5px;
+  font-weight:600;padding:8px 14px;border-radius:8px;border:1px solid rgba(255,255,255,.25)}
+.badges a:hover{background:rgba(255,255,255,.22)}
+
+/* sticky nav */
+nav{position:sticky;top:0;z-index:30;background:#fff;border-bottom:1px solid var(--line);
+  box-shadow:0 2px 10px rgba(20,40,60,.05)}
+nav .wrap{display:flex;gap:6px;overflow-x:auto;padding:9px 18px}
+nav a{white-space:nowrap;font-size:13px;font-weight:600;color:var(--slate);text-decoration:none;
+  padding:6px 11px;border-radius:7px}
+nav a:hover{background:var(--panel);color:var(--blue)}
+
+/* disclaimer */
+.note{background:#fff7e6;border:1px solid #f3d98a;border-radius:10px;padding:12px 16px;
+  font-size:13.5px;color:#6b5618;margin:22px 0}
+.note b{color:#7a5e12}
+
+/* cards */
+section{margin:30px 0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;
+  padding:24px 24px 26px;box-shadow:0 4px 18px rgba(20,40,60,.05)}
+.kicker{font-size:12.5px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--cyan)}
+.card h2{font-size:23px;margin:6px 0 4px;color:var(--ink)}
+.lead{color:var(--slate);font-size:15px;margin:0 0 18px;max-width:62ch}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:22px;align-items:start}
+@media(max-width:760px){.grid{grid-template-columns:1fr}header h1{font-size:27px}}
+
+/* segmented control */
+.seg{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+.seg button{font:inherit;font-size:13.5px;font-weight:600;cursor:pointer;border:1.5px solid var(--line);
+  background:#fff;color:var(--slate);padding:7px 13px;border-radius:8px;transition:.12s}
+.seg button:hover{border-color:var(--cyan)}
+.seg button.on{background:var(--blue);border-color:var(--blue);color:#fff}
+.seg.red button.on{background:var(--red);border-color:var(--red)}
+.seg.green button.on{background:var(--green);border-color:var(--green)}
+
+/* question / options */
+.qbox{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-bottom:12px}
+.qbox .qh{font-size:12px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.4px}
+.qbox .qt{font-size:15.5px;font-weight:600;margin:4px 0 0}
+.opt{display:flex;align-items:center;gap:10px;border:1.5px solid var(--line);border-radius:9px;
+  padding:9px 12px;margin:7px 0;font-size:14.5px;background:#fff;transition:.15s}
+.opt .ltr{width:26px;height:26px;flex:0 0 26px;border-radius:6px;background:var(--panel);
+  color:var(--slate);font-weight:700;display:flex;align-items:center;justify-content:center;font-size:13px}
+.opt.pick{border-color:var(--blue);background:#eef5fb}
+.opt.pick .ltr{background:var(--blue);color:#fff}
+.opt.correct{border-color:#bfe3d0;background:#eaf6ef}
+.opt.right .ltr{background:var(--green);color:#fff}
+.opt.wrong .ltr{background:var(--red);color:#fff}
+.verdict{font-weight:700;font-size:15px;margin-top:6px}
+.verdict.ok{color:var(--dgreen)} .verdict.bad{color:var(--dred)}
+
+/* output box */
+.outbox{border:1.5px solid var(--line);border-radius:10px;overflow:hidden}
+.outbox .oh{padding:8px 14px;font-weight:700;color:#fff;font-size:13.5px}
+.outbox .ob{padding:14px 16px;font-size:14px}
+.reason{color:var(--slate);font-style:italic;font-size:13.5px;margin:0 0 10px}
+.bignum{font-size:30px;font-weight:800}
+
+/* stat strip */
+.strip{display:flex;flex-wrap:wrap;gap:14px;margin-top:16px}
+.stat{flex:1 1 130px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.stat .n{font-size:22px;font-weight:800;color:var(--blue)}
+.stat .l{font-size:12.5px;color:var(--slate)}
+
+/* charts */
+.chart{width:100%;height:auto;display:block}
+.bv{font:700 12px Arial;fill:var(--ink)}
+.bl{font:600 11px Arial;fill:var(--slate)}
+.baseline{stroke:var(--gray);stroke-width:1.4;stroke-dasharray:5 4}
+.basel{font:600 10px Arial;fill:var(--gray)}
+.donut{width:170px;height:170px;display:block;margin:0 auto}
+.dnum{font:800 26px Arial;fill:var(--red)}
+.dlbl{font:700 11px Arial;fill:var(--ink)}
+.cap{font-size:13px;color:var(--slate);text-align:center;margin-top:6px}
+
+/* truncation abstract */
+.abs{font-size:14px;line-height:1.7;border:1px solid var(--line);border-radius:10px;padding:14px 16px;background:#fff}
+.abs .s{transition:.2s}
+.abs .keep{background:#e9f6ef;color:var(--ink);border-radius:4px;padding:1px 3px}
+.abs .drop{color:#c2cad3}
+.callout{margin-top:12px;border-radius:10px;padding:12px 14px;font-weight:600;font-size:14.5px}
+.callout.good{background:#e9f6ef;border:1px solid #b6e0cb;color:var(--dgreen)}
+.callout.bad{background:#fdecea;border:1px solid #f1c3bd;color:var(--dred)}
+.callout.mid{background:var(--panel);border:1px solid var(--line);color:var(--slate)}
+
+/* footer */
+footer{background:var(--ink);color:#cdd9e3;padding:34px 0;margin-top:40px;font-size:14px}
+footer a{color:var(--yellow)}
+footer code{background:rgba(255,255,255,.1);padding:2px 6px;border-radius:5px;font-size:12.5px;color:#fff}
+.fgrid{display:grid;grid-template-columns:2fr 1fr;gap:24px}
+@media(max-width:680px){.fgrid{grid-template-columns:1fr}}
+.tiny{font-size:12.5px;color:var(--slate)}
+.hl{color:var(--red);font-weight:700}
+.hg{color:var(--dgreen);font-weight:700}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <span class="tag">Interactive companion</span>
+    <h1>When <span class="a">Chain-of-Thought</span> Backfires</h1>
+    <p class="sub">Evaluating prompt sensitivity in medical language models</p>
+    <p class="meta">Binesh Sadanandan &amp; Vahid Behzadan &nbsp;·&nbsp; SAIL Lab, University of New Haven &nbsp;·&nbsp; MedGemma-4B &amp; 27B on MedMCQA and PubMedQA</p>
+    <div class="badges">
+      <a href="#prompts">▸ Prompt shootout</a>
+      <a href="#cot">▸ CoT backfire viewer</a>
+      <a href="#bias">▸ Position bias</a>
+      <a href="#order">▸ Option-order playground</a>
+      <a href="#context">▸ Truncation explorer</a>
+      <a href="#cloze">▸ Knows-more-than-it-shows</a>
+    </div>
+  </div>
+</header>
+
+<nav><div class="wrap">
+  <a href="#prompts">Prompt strategies</a>
+  <a href="#cot">Chain-of-thought</a>
+  <a href="#bias">Position bias</a>
+  <a href="#order">Option order</a>
+  <a href="#context">Context truncation</a>
+  <a href="#cloze">Cloze vs generation</a>
+</div></nav>
+
+<div class="wrap">
+  <div class="note"><b>How this works.</b> Every demo below replays the study's recorded model behavior and its published results. Nothing runs a live model in your browser, so the answers and numbers are exactly what the paper reported. Click around and watch a celebrated prompting trick fall apart.</div>
+
+  <!-- ============ PROMPT SHOOTOUT ============ -->
+  <section id="prompts"><div class="card">
+    <div class="kicker">Finding 1 · Prompt strategies</div>
+    <h2>Every "best practice" loses to plain direct prompting</h2>
+    <p class="lead">Switch the metric and click a bar. Direct prompting is the most accurate and the least biased. Few-shot examples are the worst on both counts.</p>
+    <div class="seg" id="promptMetric">
+      <button data-m="acc" class="on">Accuracy</button>
+      <button data-m="bias">Position bias</button>
+    </div>
+    <div class="grid">
+      <div>
+        <div id="promptChart"></div>
+        <p class="cap" id="promptCap"></p>
+      </div>
+      <div>
+        <div class="qbox" id="promptInfo" style="min-height:150px"></div>
+      </div>
+    </div>
+  </div></section>
+
+  <!-- ============ CHAIN OF THOUGHT ============ -->
+  <section id="cot"><div class="card">
+    <div class="kicker">Finding 1 · Chain-of-thought</div>
+    <h2>Watch reasoning talk itself out of the right answer</h2>
+    <p class="lead">Pick a question, then switch between direct answering and step-by-step reasoning. Direct prompting gets these right. The reasoning chain names the correct answer, then deliberates its way into a wrong, sometimes contraindicated, one.</p>
+    <div class="seg" id="cotPick"></div>
+    <div class="grid">
+      <div>
+        <div class="qbox">
+          <div class="qh" id="cotQh"></div>
+          <div class="qt" id="cotQt"></div>
+        </div>
+        <div id="cotOpts"></div>
+      </div>
+      <div>
+        <div class="seg green" id="cotMode">
+          <button data-m="direct" class="on">Direct prompting</button>
+          <button data-m="cot">Chain-of-thought</button>
+        </div>
+        <div class="outbox" id="cotOut"></div>
+      </div>
+    </div>
+    <div class="strip">
+      <div class="stat"><div class="n">750</div><div class="l">answers CoT broke (was right, now wrong)</div></div>
+      <div class="stat"><div class="n">512</div><div class="l">answers CoT fixed</div></div>
+      <div class="stat"><div class="n" style="color:var(--red)">−238</div><div class="l">net effect across 4,183 questions (−5.7%)</div></div>
+    </div>
+    <div class="callout bad" style="margin-top:14px">Clinical stakes: prompt choice alone pushed the model to pick contraindicated drugs, for example neostigmine for organophosphate poisoning and allopurinol during an acute gout attack.</div>
+  </div></section>
+
+  <!-- ============ POSITION BIAS ============ -->
+  <section id="bias"><div class="card">
+    <div class="kicker">Finding 2 · Position bias</div>
+    <h2>Few-shot examples collapse the model onto option A</h2>
+    <p class="lead">Compare where the correct answers actually sit against where the model puts its predictions. Add few-shot examples and the model answers "A" three times out of four, regardless of content.</p>
+    <div class="seg" id="biasSeg">
+      <button data-k="truth" class="on">Ground truth</button>
+      <button data-k="zero">Zero-shot direct</button>
+      <button data-k="few">Few-shot direct</button>
+    </div>
+    <div class="grid">
+      <div>
+        <div id="biasChart"></div>
+        <p class="cap">Share of answers at each position (A, B, C, D).</p>
+      </div>
+      <div>
+        <div class="qbox" id="biasInfo" style="min-height:140px"></div>
+      </div>
+    </div>
+  </div></section>
+
+  <!-- ============ OPTION ORDER ============ -->
+  <section id="order"><div class="card">
+    <div class="kicker">Finding 3 · Option order</div>
+    <h2>Does the model read the question, or the position?</h2>
+    <p class="lead">Take one real anatomy question. Keep the words identical and only move the options around. The model keeps picking the same letter, which means it follows the slot on the screen, not the content in it.</p>
+    <div class="grid">
+      <div>
+        <div class="seg red" id="orderSeg">
+          <button data-k="orig" class="on">Original order</button>
+          <button data-k="shuf">Shuffled order</button>
+        </div>
+        <div class="qbox">
+          <div class="qh">Q · Anatomy (MedMCQA)</div>
+          <div class="qt">Which of the following is <i>not</i> a branch of the external carotid artery in Kiesselbach's plexus?</div>
+        </div>
+        <div id="orderOpts"></div>
+        <div id="orderVerdict"></div>
+      </div>
+      <div>
+        <h3 style="margin:2px 0 8px;font-size:15px;color:var(--ink)">Across all 4,183 questions</h3>
+        <div id="orderChart"></div>
+        <p class="cap">Accuracy by perturbation (seed 42). Rotations move every option; the distractor swap changes content but keeps the answer in place.</p>
+        <div id="flipDonut" style="margin-top:8px"></div>
+        <p class="cap">Mean flip rate when options are shuffled, up to 72.9% for a single rotation.</p>
+      </div>
+    </div>
+  </div></section>
+
+  <!-- ============ TRUNCATION ============ -->
+  <section id="context"><div class="card">
+    <div class="kicker">Finding 4 · Context truncation</div>
+    <h2>How you cut the context matters more than how much</h2>
+    <p class="lead">Feed the model an abstract, then cut it different ways. Keeping the opening is nearly free. Removing the opening and keeping only the tail drops accuracy below answering with no context at all.</p>
+    <div class="seg" id="truncSeg">
+      <button data-k="full" class="on">Full context</button>
+      <button data-k="back">Keep opening (back-trunc)</button>
+      <button data-k="salient">Salient top-5</button>
+      <button data-k="middle">Keep middle</button>
+      <button data-k="front">Keep only ending (front-trunc)</button>
+      <button data-k="none">Question only</button>
+    </div>
+    <div class="grid">
+      <div>
+        <div class="qbox">
+          <div class="qh">Research question · PubMedQA style (illustrative)</div>
+          <div class="qt">Does high-intensity statin therapy reduce cardiovascular events in diabetic patients?</div>
+        </div>
+        <div class="abs" id="truncAbs"></div>
+        <div id="truncCallout"></div>
+      </div>
+      <div>
+        <div id="truncChart"></div>
+        <p class="cap">PubMedQA accuracy, MedGemma-4B. Dashed line is the no-context baseline (34.5%).</p>
+      </div>
+    </div>
+  </div></section>
+
+  <!-- ============ CLOZE ============ -->
+  <section id="cloze"><div class="card">
+    <div class="kicker">Finding 5 · Reading the log-probs</div>
+    <h2>The model knows more than its generated text shows</h2>
+    <p class="lead">The bigger model looks worse when it has to write an answer. Read its option probabilities instead of its generated text, and it jumps to the best score in the whole study. Same model, same questions, different readout.</p>
+    <div class="grid">
+      <div>
+        <div class="seg" id="clozeModel">
+          <button data-m="4b" class="on">MedGemma-4B</button>
+          <button data-m="27b">MedGemma-27B</button>
+        </div>
+        <div class="seg" id="clozeMethod">
+          <button data-x="gen" class="on">Generate the answer</button>
+          <button data-x="cloze">Read the log-probs (cloze)</button>
+        </div>
+        <div class="qbox" style="text-align:center;padding:24px">
+          <div class="bignum" id="clozeNum">45.8%</div>
+          <div class="tiny" id="clozeSub" style="margin-top:6px"></div>
+        </div>
+      </div>
+      <div>
+        <div id="clozeChart"></div>
+        <p class="cap">MedMCQA accuracy. The two models swap ranking depending only on how the answer is extracted.</p>
+      </div>
+    </div>
+  </div></section>
+
+</div>
+
+<footer><div class="wrap fgrid">
+  <div>
+    <h3 style="color:#fff;margin:0 0 8px">When Chain-of-Thought Backfires</h3>
+    <p style="margin:0 0 10px">Standard prompt-engineering best practices do not transfer to domain-specific medical language models. Reliable alternatives, including cloze scoring, permutation voting, and end-truncation, recover most of what prompting loses.</p>
+    <p class="tiny" style="color:#9fb3c2">Demos replay the study's recorded examples and published results. They are illustrations, not live model inference. The statin abstract is a constructed example used only to show how truncation strategies differ.</p>
+  </div>
+  <div>
+    <p style="margin:0 0 6px"><b style="color:#fff">Cite</b></p>
+    <p class="tiny" style="color:#9fb3c2">Sadanandan, B. &amp; Behzadan, V. When Chain-of-Thought Backfires: Evaluating Prompt Sensitivity in Medical Language Models. SAIL Lab, University of New Haven.</p>
+    <p style="margin:14px 0 0"><a href="https://github.com/UNHSAILLab/MedMCQA-Robustness-Study">Code &amp; paper on GitHub</a></p>
+  </div>
+</div></footer>
+
+<script>
+/* ---------- tiny SVG chart helpers ---------- */
+function bars(data, o){
+  o=o||{}; const max=o.max||50, W=480, H=o.height||270, pL=18,pR=18,pT=30,pB=o.padB||48;
+  const pw=W-pL-pR, ph=H-pT-pB, gap=pw/data.length;
+  let s='';
+  if(o.baseline!=null){const by=pT+ph*(1-o.baseline/max);
+    s+=`<line class="baseline" x1="${pL}" y1="${by}" x2="${W-pR}" y2="${by}"/>`+
+       `<text class="basel" x="${W-pR}" y="${by-4}" text-anchor="end">${o.baselineLabel||''}</text>`;}
+  data.forEach((d,i)=>{const x=pL+gap*i+gap/2, bw=Math.min(64,gap*0.6);
+    const bh=Math.max(2,ph*(d.v/max)), y=pT+ph-bh;
+    s+=`<rect x="${x-bw/2}" y="${y}" width="${bw}" height="${bh}" rx="3" fill="${d.c}"><title>${d.label}: ${o.fmt?o.fmt(d.v):d.v}</title></rect>`;
+    s+=`<text class="bv" x="${x}" y="${y-6}" text-anchor="middle">${o.fmt?o.fmt(d.v):d.v}</text>`;
+    const parts=String(d.label).split('\n');
+    parts.forEach((p,j)=>{s+=`<text class="bl" x="${x}" y="${H-pB+15+j*12}" text-anchor="middle">${p}</text>`;});
+  });
+  return `<svg viewBox="0 0 ${W} ${H}" class="chart" preserveAspectRatio="xMidYMid meet">${s}</svg>`;
+}
+function groupBars(cats, series, o){
+  o=o||{}; const max=o.max||80, W=480,H=o.height||280, pL=20,pR=14,pT=34,pB=48;
+  const pw=W-pL-pR, ph=H-pT-pB, gw=pw/cats.length, n=series.length, bw=Math.min(28,gw/(n+1));
+  let s='';
+  // legend
+  series.forEach((se,k)=>{const lx=pL+k*150;
+    s+=`<rect x="${lx}" y="6" width="12" height="12" rx="2" fill="${se.c}"/>`+
+       `<text class="bl" x="${lx+16}" y="16">${se.name}</text>`;});
+  cats.forEach((cat,i)=>{const cx=pL+gw*i+gw/2;
+    series.forEach((se,k)=>{const x=cx+(k-(n-1)/2)*(bw+3);
+      const v=se.v[i], bh=Math.max(2,ph*(v/max)), y=pT+ph-bh;
+      s+=`<rect x="${x-bw/2}" y="${y}" width="${bw}" height="${bh}" rx="2" fill="${se.c}"><title>${se.name} ${cat}: ${v}</title></rect>`;
+      s+=`<text class="bv" style="font-size:9px" x="${x}" y="${y-3}" text-anchor="middle">${v}</text>`;});
+    s+=`<text class="bl" x="${cx}" y="${H-pB+16}" text-anchor="middle" style="font-weight:700">${cat}</text>`;});
+  return `<svg viewBox="0 0 ${W} ${H}" class="chart" preserveAspectRatio="xMidYMid meet">${s}</svg>`;
+}
+function donut(pct,color,label){const r=54,c=2*Math.PI*r,off=c*(1-pct/100);
+  return `<svg viewBox="0 0 150 150" class="donut">
+   <circle cx="75" cy="75" r="${r}" fill="none" stroke="var(--line)" stroke-width="18"/>
+   <circle cx="75" cy="75" r="${r}" fill="none" stroke="${color}" stroke-width="18"
+     stroke-dasharray="${c}" stroke-dashoffset="${off}" stroke-linecap="round" transform="rotate(-90 75 75)"/>
+   <text class="dnum" x="75" y="72" text-anchor="middle">${pct}%</text>
+   <text class="dlbl" x="75" y="92" text-anchor="middle">${label}</text></svg>`;}
+function segWire(id,fn){const el=document.getElementById(id);
+  el.addEventListener('click',e=>{const b=e.target.closest('button'); if(!b)return;
+    [...el.children].forEach(c=>c.classList.remove('on')); b.classList.add('on');
+    fn(b.dataset);});}
+
+/* ===== 1. OPTION ORDER ===== */
+const ORDER={
+  orig:{opts:['Sphenopalatine artery','Anterior ethmoidal artery','Greater palatine artery','Septal branch of superior labial artery'],
+        pick:1, correctTxt:'Anterior ethmoidal artery', model:'B',
+        msg:'The model answers <b>B</b>, Anterior ethmoidal artery. That is correct: it is not an external carotid branch.'},
+  shuf:{opts:['Anterior ethmoidal artery','Septal branch of superior labial artery','Sphenopalatine artery','Greater palatine artery'],
+        pick:1, correctTxt:'Anterior ethmoidal artery', model:'B',
+        msg:'Same question, options shuffled. The correct content moved to <b>A</b>, but the model still answers <b>B</b>. It followed the position, not the content.'}};
+function renderOrder(k){
+  const d=ORDER[k], host=document.getElementById('orderOpts'); let h='';
+  d.opts.forEach((t,i)=>{const L='ABCD'[i]; const isPick=(L===d.model);
+    const isCorrect=(t===d.correctTxt);
+    let cls='opt'+(isCorrect?' correct':'')+(isPick?' pick':'')+(isPick&&isCorrect?' right':'')+(isPick&&!isCorrect?' wrong':'');
+    h+=`<div class="${cls}"><span class="ltr">${L}</span><span>${t}${isCorrect?' &nbsp;✓ correct answer':''}</span></div>`;});
+  host.innerHTML=h;
+  const ok=(ORDER[k].opts['ABCD'.indexOf(d.model)]===d.correctTxt);
+  document.getElementById('orderVerdict').innerHTML=
+    `<div class="verdict ${ok?'ok':'bad'}">Model picks ${d.model} → ${ok?'correct ✓':'wrong ✗'}</div><p class="reason">${d.msg}</p>`;
+}
+segWire('orderSeg',ds=>renderOrder(ds.k)); renderOrder('orig');
+document.getElementById('orderChart').innerHTML=bars([
+  {label:'Original',v:47.6,c:'#2e9e6b'},{label:'Distractor\nswap',v:47.6,c:'#00b9ff'},
+  {label:'Random\nshuffle',v:27.3,c:'#d6453f'},{label:'Rotate-2',v:21.9,c:'#d6453f'},
+  {label:'Rotate-1',v:20.2,c:'#9b2620'}],
+  {max:55,baseline:25,baselineLabel:'random 25%',fmt:v=>v.toFixed(1)+'%'});
+document.getElementById('flipDonut').innerHTML=donut(59.1,'#d6453f','answers flip');
+
+/* ===== 2. CHAIN OF THOUGHT ===== */
+const COT=[
+ {id:'gout',qh:'Q · Pharmacology',q:'Which drug is used for the treatment of acute gout?',
+  opts:['Allopurinol','Colchicine','Probenecid','Febuxostat'],correct:1,
+  direct:'B',
+  cotReason:'“Allopurinol is a xanthine oxidase inhibitor for chronic gout… Colchicine is effective for acute flares… However, NSAIDs are often first-line, and colchicine has a narrow therapeutic index… Given the considerations about side effects…”',
+  cotPick:0,cotNote:'Allopurinol is contraindicated during an acute attack.'},
+ {id:'cand',qh:'Q · Dental',q:'In a 6-month-old child, a thick curd-like white patch appears on the buccal mucosa. On rubbing it leaves an erythematous patch. Most likely diagnosis is:',
+  opts:['Tuberculosis','Lichen planus','Lupus erythematosus','Candidiasis'],correct:3,
+  direct:'D',
+  cotReason:'“A) Tuberculosis: oral tuberculosis is rare in children. While it can present with lesions, they are less likely to be the classic curd-like appearance. B) Lichen planus: less common in infants…”',
+  cotPick:0,cotNote:'The reasoning rejects the textbook answer and selects Tuberculosis.'},
+ {id:'nerve',qh:'Q · Anatomy',q:'The longest cranial nerve is:',
+  opts:['Trigeminal','Facial','Vagus','Hypoglossal'],correct:2,
+  direct:'C',
+  cotReason:'“The trigeminal has three divisions over a large facial area… The vagus extends to the abdomen, making it anatomically the longest… However, if we count total fiber length across all branches, the trigeminal’s three divisions might collectively exceed…”',
+  cotPick:0,cotNote:'A specious total-branch-length argument turns a recall question into the wrong answer.'}
+];
+let cotState={i:0,mode:'direct'};
+document.getElementById('cotPick').innerHTML=COT.map((c,i)=>
+  `<button data-i="${i}" class="${i===0?'on':''}">${c.q.length>34?c.q.slice(0,32)+'…':c.q}</button>`).join('');
+function renderCotQ(){const c=COT[cotState.i];
+  document.getElementById('cotQh').textContent=c.qh;
+  document.getElementById('cotQt').textContent=c.q;
+  let h='';c.opts.forEach((t,i)=>{const L='ABCD'[i];const isC=i===c.correct;
+    h+=`<div class="opt${isC?' right':''}"><span class="ltr">${L}</span><span>${t}${isC?' &nbsp;✓':''}</span></div>`;});
+  document.getElementById('cotOpts').innerHTML=h; renderCotOut();}
+function renderCotOut(){const c=COT[cotState.i],host=document.getElementById('cotOut');
+  if(cotState.mode==='direct'){const L='ABCD'[c.correct];
+    host.innerHTML=`<div class="oh" style="background:var(--green)">DIRECT PROMPTING</div>
+      <div class="ob"><div class="bignum" style="color:var(--green)">${c.direct}</div>
+      <div>${c.opts[c.correct]} &nbsp;<b style="color:var(--dgreen)">correct ✓</b></div></div>`;
+  }else{const L='ABCD'[c.cotPick];
+    host.innerHTML=`<div class="oh" style="background:var(--red)">CHAIN-OF-THOUGHT</div>
+      <div class="ob"><p class="reason">${c.cotReason}</p>
+      <div style="font-size:18px;font-weight:800;color:var(--red)">→ ${L}) ${c.opts[c.cotPick]}</div>
+      <div style="color:var(--dred);font-weight:600;margin-top:4px">wrong ✗ — ${c.cotNote}</div></div>`;}}
+document.getElementById('cotPick').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
+  [...e.currentTarget.children].forEach(c=>c.classList.remove('on'));b.classList.add('on');
+  cotState.i=+b.dataset.i;renderCotQ();});
+segWire('cotMode',ds=>{cotState.mode=ds.m;renderCotOut();});
+renderCotQ();
+
+/* ===== 3. PROMPT SHOOTOUT ===== */
+const PROMPTS=[
+ {label:'Direct',acc:47.6,bias:0.137,c:'#2e9e6b',note:'Zero-shot direct. The most accurate strategy and the least biased of the prompted methods. This is the recommended default.'},
+ {label:'Answer\nonly',acc:43.0,bias:0.096,c:'#00b9ff',note:'A minimal prompt. Slightly lower accuracy than direct, but the lowest position bias among prompts.'},
+ {label:'Zero-shot\nCoT',acc:41.9,bias:0.275,c:'#d6453f',note:'Step-by-step reasoning. Accuracy drops 5.7 points versus direct, and bias doubles. Reasoning hurts here.'},
+ {label:'Few-shot\nCoT',acc:40.8,bias:0.413,c:'#d6453f',note:'Examples plus reasoning. Worse still, and heavily biased toward early options.'},
+ {label:'Few-shot\ndirect',acc:35.7,bias:0.472,c:'#9b2620',note:'Three in-context examples. The worst strategy: 11.9 points below direct, with bias more than tripled.'}];
+function renderPrompts(metric){
+  const isAcc=metric==='acc';
+  const data=PROMPTS.map(p=>({label:p.label,v:isAcc?p.acc:p.bias,c:p.c}));
+  document.getElementById('promptChart').innerHTML=bars(data,{
+    max:isAcc?55:0.55, baseline:isAcc?25:null, baselineLabel:'random 25%',
+    fmt:v=>isAcc?v.toFixed(1)+'%':v.toFixed(3)});
+  document.getElementById('promptCap').textContent=isAcc?
+    'MedMCQA accuracy, n=4,183. Random baseline 25%.':
+    'Position bias: mean gap between predicted and true answer positions. Lower is better.';
+  // wire bar clicks
+  const svg=document.querySelector('#promptChart svg');
+  svg.querySelectorAll('rect').forEach((r,i)=>{r.style.cursor='pointer';
+    r.addEventListener('click',()=>showPrompt(i));});
+  showPrompt(0,metric);
+}
+function showPrompt(i){const p=PROMPTS[i];
+  document.getElementById('promptInfo').innerHTML=
+    `<div class="qh" style="color:${p.c}">${p.label.replace('\n',' ')}</div>
+     <div style="display:flex;gap:18px;margin:8px 0"><div><div class="bignum" style="font-size:24px">${p.acc}%</div><div class="tiny">accuracy</div></div>
+     <div><div class="bignum" style="font-size:24px">${p.bias.toFixed(3)}</div><div class="tiny">position bias</div></div></div>
+     <p style="margin:6px 0 0;font-size:14px;color:var(--slate)">${p.note}</p>`;}
+segWire('promptMetric',ds=>renderPrompts(ds.m)); renderPrompts('acc');
+
+/* ===== 4. TRUNCATION ===== */
+const SENT=[
+ 'Background: diabetic patients face elevated cardiovascular risk, and statin therapy is widely prescribed for prevention.',
+ 'Earlier trials suggested benefit, but adherence and dosing varied across cohorts.',
+ 'Methods: we analyzed 4,200 patients over five years, comparing high-intensity statin therapy against standard care.',
+ 'Outcomes included major adverse cardiac events and all-cause mortality.',
+ 'Results: high-intensity therapy reduced cardiac events by 23% compared with standard care.',
+ 'Conclusion: intensive statin therapy lowered cardiovascular events in this diabetic cohort, supporting earlier initiation.'];
+const TRUNC={
+ full:{keep:[0,1,2,3,4,5],acc:45.8,tone:'good',msg:'Full abstract. Best generative accuracy, 45.8%.'},
+ back:{keep:[0,1,2],acc:44.5,tone:'good',msg:'Keep the opening, drop the end. Accuracy holds at 44.5%, within 1.3 points of full context. This is what RAG systems should do.'},
+ salient:{keep:[0,2,3,4,5],acc:40.1,tone:'good',msg:'Keep the five sentences most relevant to the question. 40.1%, about 88% of full accuracy at far fewer tokens.'},
+ middle:{keep:[1,2,3,4],acc:33.9,tone:'mid',msg:'Keep the central portion. 33.9%, near the no-context baseline.'},
+ front:{keep:[3,4,5],acc:13.8,tone:'bad',msg:'Remove the opening, keep only the ending. 13.8%, far below answering with no context at all. Partial context actively misleads.'},
+ none:{keep:[],acc:34.5,tone:'mid',msg:'No context, question only. 34.5%. Notice this beats front-truncation.'}};
+function renderTrunc(k){const t=TRUNC[k];
+  document.getElementById('truncAbs').innerHTML=SENT.map((s,i)=>
+    `<span class="s ${t.keep.includes(i)?'keep':'drop'}">${s}</span> `).join('');
+  const co=document.getElementById('truncCallout');
+  co.className='callout '+t.tone; co.textContent=t.msg;
+  document.getElementById('truncChart').innerHTML=bars([
+   {label:'No\ncontext',v:34.5,c:'#9aa4b0'},
+   {label:'Front-\ntrunc',v:13.8,c:'#d6453f'},
+   {label:'Middle',v:33.9,c:'#f0b429'},
+   {label:'Salient\ntop-5',v:40.1,c:'#2e9e6b'},
+   {label:'Back-\ntrunc',v:44.5,c:'#2e9e6b'},
+   {label:'Full',v:45.8,c:'#003366'}],
+   {max:52,baseline:34.5,baselineLabel:'no context',fmt:v=>v.toFixed(1)+'%'});
+}
+segWire('truncSeg',ds=>renderTrunc(ds.k)); renderTrunc('full');
+
+/* ===== 5. CLOZE ===== */
+const CLOZE={'4b':{gen:45.8,cloze:51.8,biasG:0.137,biasC:0.013},
+            '27b':{gen:38.2,cloze:64.5,biasG:0.137,biasC:0.054}};
+let clz={m:'4b',x:'gen'};
+function renderCloze(){const d=CLOZE[clz.m],v=clz.x==='gen'?d.gen:d.cloze;
+  document.getElementById('clozeNum').textContent=v+'%';
+  document.getElementById('clozeNum').style.color=clz.x==='cloze'?'#1f7a4d':'#003366';
+  const sub=clz.x==='gen'
+    ?`Full-context generation. The model writes an answer and a parser reads it.`
+    :`Cloze scoring. We read the option log-probs directly, no generation. Position bias falls to ${clz.m==='4b'?'0.013':'0.054'}.`;
+  document.getElementById('clozeSub').innerHTML=sub+(clz.m==='27b'&&clz.x==='cloze'
+    ?` <span class="hg">+26.3 points over its own generation, the best score in the study.</span>`:'');
+  document.getElementById('clozeChart').innerHTML=groupBars(
+    ['Generation','Cloze'],
+    [{name:'4B',c:'#00b9ff',v:[45.8,51.8]},{name:'27B',c:'#003366',v:[38.2,64.5]}],
+    {max:72});
+}
+segWire('clozeModel',ds=>{clz.m=ds.m;renderCloze();});
+segWire('clozeMethod',ds=>{clz.x=ds.x;renderCloze();});
+renderCloze();
+
+/* ===== 6. POSITION BIAS ===== */
+const BIAS={
+ truth:{v:[32.2,25.1,21.4,21.3],c:'#9aa4b0',note:'Where the correct answers actually sit. Roughly balanced, leaning slightly to A.'},
+ zero:{v:[45.9,22.1,17.8,14.2],c:'#00b9ff',note:'Zero-shot direct already overweights A: 45.9% of predictions versus 32.2% true. Bias score 0.137.'},
+ few:{v:[76.0,12.0,7.0,5.0],c:'#d6453f',note:'Few-shot direct predicts A 76% of the time while A is correct only 32%. Bias score 0.472, more than triple zero-shot.'}};
+function renderBias(k){const b=BIAS[k];
+  document.getElementById('biasChart').innerHTML=bars(
+   ['A','B','C','D'].map((L,i)=>({label:L,v:b.v[i],c:b.c})),{max:85,fmt:v=>v.toFixed(1)+'%'});
+  document.getElementById('biasInfo').innerHTML=
+   `<div class="qh">Answer distribution</div><p style="margin:8px 0 0;font-size:14.5px;color:var(--slate)">${b.note}</p>`;}
+segWire('biasSeg',ds=>renderBias(ds.k)); renderBias('truth');
+</script>
+</body>
+</html>
